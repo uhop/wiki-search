@@ -30,13 +30,14 @@ drag the bookmarklet to your bookmarks bar, then search any GitHub wiki in place
 Or run it locally -- `python3 -m http.server` from the repo root, then open
 <http://localhost:8000/app/?wiki=uhop/wiki-search>.
 
-## How it works — Path P
+## How it works
 
 The bookmarklet is a permanent thin `window.open` stub; all logic lives in a
-GitHub Pages app **on our own origin**. A `window.open`ed window is a new
-top-level browsing context, so the host wiki page's CSP doesn't govern it — the
-app has full engine freedom and is updatable without re-saving the bookmark (the
-Flipboard "Flip It" pattern). Results are real `<a>` links carrying
+GitHub Pages app **on its own origin**. A `window.open`ed window is a new
+top-level browsing context, so the host wiki page's content-security policy
+doesn't govern it — the app has full engine freedom and is updatable without
+re-saving the bookmark (the same trick as Flipboard's classic "Flip It"
+bookmarklet). Results are real `<a>` links carrying
 [Text Fragment](https://developer.mozilla.org/docs/Web/Text_fragments)
 directives (`#anchor:~:text=…`). By default a click re-uses your wiki tab in
 place and scrolls to the section (Back returns you); the `:~:text=` highlight is

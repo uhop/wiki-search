@@ -93,12 +93,17 @@ const resolveIndexUrl = params => {
     };
   }
 
-  return { url: SPIKE_FALLBACK_INDEX, note: 'spike: bundled sample index' };
+  // No wiki and no index. On localhost keep the S1 sample for dev convenience;
+  // on a real deploy, explain instead — silently loading sample data when the
+  // bookmarklet is clicked off a wiki page looks broken (it isn't the user's wiki).
+  const onLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (onLocalhost) return { url: SPIKE_FALLBACK_INDEX, note: 'spike: bundled sample index' };
+  return { url: null, note: null };
 };
 
 // Fetch + validate. Each failure throws an Error with a specific, human message.
 const loadIndex = async url => {
-  if (!url) throw new Error('No index specified. Add ?index=<url> or ?wiki=<owner>/<repo> to the URL.');
+  if (!url) throw new Error('Nothing to search yet.\n\nClick the bookmarklet while you’re ON a GitHub wiki page (github.com/<owner>/<repo>/wiki/…) — it points the search at that wiki.\n\nOr add ?wiki=<owner>/<repo> or ?index=<url> to this page’s URL.');
 
   let res;
   try {
