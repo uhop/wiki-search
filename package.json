@@ -6,6 +6,9 @@
   "bin": {
     "wiki-search-index": "builder/wiki-index.mjs"
   },
+  "scripts": {
+    "test": "node builder/test/run.mjs"
+  },
   "files": [
     "builder/wiki-index.mjs",
     "builder/lib",
@@ -13,7 +16,7 @@
     "INDEX-FORMAT.md"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "keywords": [
     "wiki",
@@ -34,5 +37,9 @@
     "url": "https://github.com/uhop/wiki-search/issues"
   },
   "author": "Eugene Lazutkin",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/uhop"
+  },
   "license": "BSD-3-Clause"
 }

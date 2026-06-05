@@ -1,4 +1,7 @@
-# wiki-search
+# wiki-search [![NPM version][npm-img]][npm-url]
+
+[npm-img]: https://img.shields.io/npm/v/wiki-search-index.svg
+[npm-url]: https://npmjs.org/package/wiki-search-index
 
 GitHub wikis are great for docs but have no real search. **wiki-search adds it:**
 a bookmarklet (plus a hosted search page) that searches a wiki and takes you
@@ -42,12 +45,16 @@ its own URL template, so the same app works for any site with no hardcoded host.
 | `app/` | The search page (loads + validates an index, searches, links out). |
 | `builder/` | `wiki-index` CLI: Markdown → the JSON index. |
 | `engine/` | Search core: MiniSearch (vendored), with a zero-dep fallback. |
-| `bookmarklet/` | The `window.open` stub + builder. |
+| `bookmarklet/` | The bookmarklet — one constant, imported by the app + install page. |
 
 Run locally: `python3 -m http.server` from the repo root, then open
 <http://localhost:8000/app/?wiki=uhop/wiki-search>.
 
 </details>
+
+## Release notes
+
+- 0.1.0 _Initial release of the `wiki-search-index` builder._
 
 ## License
 
