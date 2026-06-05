@@ -1,0 +1,38 @@
+{
+  "name": "wiki-search-index",
+  "version": "0.1.0",
+  "description": "Build a self-describing search index from a GitHub wiki (or any Markdown docs) — the indexer for wiki-search.",
+  "type": "module",
+  "bin": {
+    "wiki-search-index": "builder/wiki-index.mjs"
+  },
+  "files": [
+    "builder/wiki-index.mjs",
+    "builder/lib",
+    "builder/README.md",
+    "INDEX-FORMAT.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "wiki",
+    "search",
+    "github-wiki",
+    "search-index",
+    "bookmarklet",
+    "documentation",
+    "wiki-search",
+    "static-search"
+  ],
+  "homepage": "https://uhop.github.io/wiki-search/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uhop/wiki-search.git"
+  },
+  "bugs": {
+    "url": "https://github.com/uhop/wiki-search/issues"
+  },
+  "author": "Eugene Lazutkin",
+  "license": "BSD-3-Clause"
+}

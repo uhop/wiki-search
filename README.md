@@ -16,11 +16,12 @@ straight to the matching section — without moving your docs off the wiki.
   [Node](https://nodejs.org), nothing to install:
 
   ```bash
-  node builder/wiki-index.mjs --wiki ./your-wiki   # → your-wiki/search-index.json
+  npx wiki-search-index --wiki ./your-wiki   # → your-wiki/search-index.json
   ```
 
-  Commit that `search-index.json` into your wiki, then point readers at the
-  bookmarklet or search page. More options in [`builder/README.md`](builder/README.md).
+  Commit that `search-index.json` into your wiki, then add a one-line Search
+  section. Full guide — including keeping the index fresh —
+  [Add search to your wiki](https://github.com/uhop/wiki-search/wiki/Add-Search).
 
 ## How it works
 
