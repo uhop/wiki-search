@@ -9,19 +9,18 @@ native search is a **manual** column — it can't be driven headlessly.
 
 ## Run
 
-```bash
-# MiniSearch is a vendored, eval-only dependency (gitignored, not committed):
-mkdir -p spikes/s3/vendor
-curl -sL https://cdn.jsdelivr.net/npm/minisearch@7/+esm -o spikes/s3/vendor/minisearch.mjs
+MiniSearch is now vendored at `engine/vendor/minisearch.mjs` (committed — see the
+Verdict below), so no fetch is needed:
 
+```bash
 node spikes/s3/compare.mjs                 # default queries, local wiki/search-index.json
 node spikes/s3/compare.mjs --live          # against the raw-hosted index
 node spikes/s3/compare.mjs "your query"    # ad-hoc queries
 ```
 
-Both engines implement the same `{ buildIndex, query, ENGINE_NAME }` interface
-(the hand-rolled one is `engine/search.js`; MiniSearch via
-`engines/minisearch-adapter.mjs`), so the harness drives them apples-to-apples.
+Both engines implement the same `{ buildIndex, query, ENGINE_NAME }` interface —
+the hand-rolled one is `engine/search.js`, MiniSearch via `engine/minisearch.js`
+— so the harness drives them apples-to-apples.
 
 ## Result (8 realistic queries, 2026-06-04)
 
@@ -48,14 +47,16 @@ deployment is preserved**; we'd just vendor one pinned MIT-licensed file into
 `app/` rather than ship our own ranker. Index size is unaffected (19 KB raw /
 6.2 KB gzip; MiniSearch builds its in-memory index at load).
 
-## Verdict / recommendation
+## Verdict — adopted
 
-**Adopt MiniSearch** for the app: clearly-better relevance on conceptual queries
-at a small, build-free cost. Keep `engine/search.js` as a zero-dep reference /
-fallback. This is the open decision's answer — final call is the maintainer's.
+**MiniSearch is adopted** for the app: clearly-better relevance on conceptual
+queries at a small, build-free cost. Done:
 
-If adopted: vendor `app/vendor/minisearch.mjs` (pinned), point `app/app.js`'s
-engine import at it, and drop `prefix`/`fuzzy`/`boost` config alongside.
+- vendored pinned at `engine/vendor/minisearch.mjs` (MiniSearch 7.2.0, **MIT** —
+  see `engine/vendor/minisearch.LICENSE.txt`; MIT is compatible with our
+  BSD-3-Clause, notice retained);
+- adapter at `engine/minisearch.js` (carries the `boost`/`prefix`/`fuzzy` config);
+- `app/app.js` imports it; `engine/search.js` stays as the zero-dep fallback.
 
 ## GitHub-native search — manual comparison (to fill)
 

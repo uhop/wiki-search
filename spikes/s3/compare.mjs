@@ -12,7 +12,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 import * as handRolled from '../../engine/search.js';
-import * as miniSearch from './engines/minisearch-adapter.mjs';
+import * as miniSearch from '../../engine/minisearch.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const LIVE_URL = 'https://raw.githubusercontent.com/wiki/uhop/wiki-search/search-index.json';

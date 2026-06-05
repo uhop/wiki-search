@@ -2,7 +2,3 @@ node_modules/
 bookmarklet/dist/
 .DS_Store
 *.log
-
-# Vendored eval-only dependency for the S3 engine A/B (fetched, not committed).
-# See spikes/s3/NOTES.md for the fetch command. The shipped app stays zero-dep.
-spikes/s3/vendor/

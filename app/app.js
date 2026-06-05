@@ -13,7 +13,7 @@
 //   - #anchor on/off  (structural scroll fallback)
 //   - :~:text= on/off (native highlight; auto-off where unsupported)
 
-import { buildIndex, query, ENGINE_NAME } from '../engine/search.js';
+import { buildIndex, query, ENGINE_NAME } from '../engine/minisearch.js';
 
 const SUPPORTED_VERSIONS = [1];
 const DEFAULT_WIKI_INDEX_FILE = 'search-index.json'; // convention used only by the ?wiki shortcut (open decision, S1)
