@@ -1,6 +1,6 @@
 // engine/search.js — minimal, dependency-free ranked search. Kept as the
 // zero-dependency fallback / reference; the app uses engine/minisearch.js by
-// default (chosen by the S3 A/B).
+// default (chosen by an A/B on real wiki content).
 //
 // The interface is deliberately tiny so engines are interchangeable:
 //
@@ -14,12 +14,12 @@
 
 import { pickPhrase, snippetAround } from './phrase.js';
 
-export const ENGINE_NAME = 'spike/hand-rolled';
+export const ENGINE_NAME = 'hand-rolled';
 
 const WORD = /[^\p{L}\p{N}]+/u;
 
-// Tiny stoplist — enough to keep one-letter/glue tokens from dominating the
-// spike's tiny corpus. Not load-bearing; a real engine brings its own.
+// Tiny stoplist — enough to keep one-letter/glue tokens from dominating on a
+// small corpus. Not load-bearing; a real engine brings its own.
 const STOP = new Set('a an and are as at be by for from in is of on or the to with'.split(' '));
 
 const tokenize = s =>

@@ -2,8 +2,8 @@
 //
 // GitHub lowercases a heading, strips most punctuation, turns spaces into
 // hyphens, and disambiguates repeats *within a page* as -1, -2, …. This is a
-// close approximation, good enough for English docs; S2/S3 verify the anchors
-// against real rendered pages and flag any divergence.
+// close approximation, good enough for English docs; verified against real
+// rendered GitHub wiki pages.
 
 export const slugify = text =>
   text

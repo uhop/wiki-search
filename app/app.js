@@ -1,12 +1,13 @@
-// app/app.js — the popup search app (S1 + S2 spikes).
+// app/app.js — the popup search app.
 //
-// Path P thesis (S1): opened via a bookmarklet's window.open() from a GitHub
-// wiki page, this is a new top-level context on its own origin, so the wiki
-// page's CSP does not govern it. It fetches a self-describing, versioned index,
-// validates it (verify-or-explain — every failure produces a specific message,
-// never a blank box), searches, and renders results as real <a> links.
+// Opened via the bookmarklet's window.open() from a GitHub wiki page, this is a
+// new top-level context on its own origin, so the wiki page's CSP does not govern
+// it. The bookmarklet hands us the page it was clicked on (?from=); we derive the
+// wiki, fetch a self-describing, versioned index, validate it (verify-or-explain —
+// every failure produces a specific message, never a blank box), search, and
+// render results as real <a> links.
 //
-// Positioning (S2): result links carry Text Fragment directives
+// Positioning: result links carry Text Fragment directives
 // (`#anchor:~:text=phrase`). The DEFAULT when launched via the bookmarklet is to
 // re-use the wiki tab in place (no tab spam, Back returns you). We emit the
 // :~:text= highlight in EVERY mode and let the browser decide whether to honor
@@ -16,12 +17,11 @@
 //
 // The one carve-out is GitHub: with BOTH #anchor and :~:text= present, GitHub's
 // own scroll-shim fights the directive (you land at the heading while the
-// highlight sits at the first match elsewhere — confirmed live 2026-06-04, S2
-// G4). So we drop the #anchor on GitHub ONLY in the modes where the highlight
-// actually fires (isolated, user-initiated new/reused tab); in-place keeps both
-// (its directive won't fire, so there's no fight and the anchor still scrolls).
-// All three target modes stay behind the "Options" disclosure for the manual
-// cross-browser gates.
+// highlight sits at the first match elsewhere — confirmed live 2026-06-04). So we
+// drop the #anchor on GitHub ONLY in the modes where the highlight actually fires
+// (isolated, user-initiated new/reused tab); in-place keeps both (its directive
+// won't fire, so there's no fight and the anchor still scrolls). All three target
+// modes stay behind the "Options" disclosure.
 //
 // Transience: when running as a bookmarklet popup, the window closes itself on
 // blur, on Escape, and after a result click — the extension-popup feel modelled
@@ -29,11 +29,11 @@
 // doesn't lose your search.
 
 import { buildIndex, query, ENGINE_NAME } from '../engine/minisearch.js';
-import { buildBookmarklet } from '../bookmarklet/build-core.js';
+import { BOOKMARKLET } from '../bookmarklet/bookmarklet.js';
 
 const SUPPORTED_VERSIONS = [1];
-const DEFAULT_WIKI_INDEX_FILE = 'search-index.json'; // convention used only by the ?wiki shortcut (open decision, S1)
-const SPIKE_FALLBACK_INDEX = '../spikes/s1/sample-index.json';
+const DEFAULT_WIKI_INDEX_FILE = 'search-index.json'; // convention used only by the ?wiki / ?from shortcuts
+const WIKI_URL_RE = /github\.com\/([^/]+)\/([^/]+)\/wiki/; // owner/repo from a wiki page URL
 
 const els = {
   q: document.getElementById('q'),
@@ -51,12 +51,11 @@ let SITE = null;
 let HANDLE = null;
 
 // Does this browser consume Text Fragment directives? (Document.fragmentDirective)
-// Present in Chrome/Edge, Safari 18.2+, Firefox 131+. Detection ≈ support; the
-// S2 cross-browser checklist is authoritative, but this is enough to drive the
-// anchor-only fallback.
+// Present in Chrome/Edge, Safari 18.2+, Firefox 131+. Detection ≈ support, and is
+// enough to drive the anchor-only fallback.
 const FRAGMENTS_SUPPORTED = 'fragmentDirective' in document;
 
-// S2 positioning levers. Defaults reproduce S1 (new tab, anchor + text directive).
+// Positioning levers (overridable via URL params + the Options row).
 const MODES = { target: 'new', anchor: true, text: true };
 
 const setStatus = text => { els.status.className = 'status'; els.status.textContent = text; };
@@ -76,28 +75,33 @@ const debounce = (fn, ms) => {
 
 // Resolve which index to load, in priority order:
 //   ?index=<url>            general — any JSON anywhere; its metadata says how to link.
-//   ?wiki=<owner>/<repo>    GitHub convenience — derive the raw index URL.
-//   (neither)               spike fallback: the bundled stream-json sample.
+//   ?wiki=<owner>/<repo>    direct (used by demo / shared links) — derive the raw index URL.
+//   ?from=<page url>        from the bookmarklet — the page it was clicked on; we parse
+//                           owner/repo here so that detection lives server-side and a
+//                           saved bookmark never goes stale on it.
+//   (none)                  nothing to search yet — loadIndex() explains.
 const resolveIndexUrl = params => {
   const index = params.get('index');
   if (index) return { url: index, note: null };
 
+  let owner, repo;
   const wiki = params.get('wiki');
   if (wiki) {
     const m = /^([^/]+)\/([^/]+)$/.exec(wiki.trim());
     if (!m) return { url: null, note: `bad ?wiki value "${wiki}" (want owner/repo)` };
-    const file = params.get('file') || DEFAULT_WIKI_INDEX_FILE;
-    return {
-      url: `https://raw.githubusercontent.com/wiki/${m[1]}/${m[2]}/${file}`,
-      note: null,
-    };
+    [, owner, repo] = m;
+  } else {
+    const from = params.get('from');
+    const m = from && WIKI_URL_RE.exec(from);
+    if (m) [, owner, repo] = m;
   }
 
-  // No wiki and no index. On localhost keep the S1 sample for dev convenience;
-  // on a real deploy, explain instead — silently loading sample data when the
-  // bookmarklet is clicked off a wiki page looks broken (it isn't the user's wiki).
-  const onLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  if (onLocalhost) return { url: SPIKE_FALLBACK_INDEX, note: 'spike: bundled sample index' };
+  if (owner && repo) {
+    const file = params.get('file') || DEFAULT_WIKI_INDEX_FILE;
+    return { url: `https://raw.githubusercontent.com/wiki/${owner}/${repo}/${file}`, note: null };
+  }
+
+  // No index, no wiki, and not launched from a recognizable wiki page.
   return { url: null, note: null };
 };
 
@@ -279,31 +283,24 @@ const wirePopupDismissal = () => {
   window.addEventListener('keydown', e => { if (e.key === 'Escape') closePopup(); });
 };
 
-// Standalone (not a popup): pitch the bookmarklet above the search box, with a
-// real draggable javascript: link built from THIS origin — so a fork's page
-// yields a fork-correct bookmarklet with zero config. Hidden when launched via
-// the bookmarklet (you already have it).
-const setupPromo = async () => {
+// Standalone (not a popup): pitch the bookmarklet above the search box as a real
+// draggable javascript: link. Hidden when launched via the bookmarklet (you
+// already have it).
+const setupPromo = () => {
   if (window.opener || !els.promo) return;
-  try {
-    const appUrl = new URL('.', location.href).href; // this app, sans query
-    const src = await fetch('../bookmarklet/stub.js').then(r => r.text());
-    const bm = el('a', 'bm', '🔍 Wiki Search');
-    bm.href = buildBookmarklet(src, appUrl);
-    bm.title = 'Drag me to your bookmarks bar (clicking here does nothing)';
-    bm.draggable = true;
-    const how = el('a', 'how', 'How to install ›');
-    how.href = '../'; // the landing / install page at the Pages root
-    els.promo.append(
-      el('span', null, '🔖 Search wikis in place — drag '),
-      bm,
-      el('span', null, ' to your bookmarks bar. '),
-      how,
-    );
-    els.promo.hidden = false;
-  } catch {
-    // stub unreachable (e.g. opened from file://) — skip the pitch silently.
-  }
+  const bm = el('a', 'bm', '🔍 Wiki Search');
+  bm.href = BOOKMARKLET;
+  bm.title = 'Drag me to your bookmarks bar (clicking here does nothing)';
+  bm.draggable = true;
+  const how = el('a', 'how', 'How to install ›');
+  how.href = '../'; // the landing / install page at the Pages root
+  els.promo.append(
+    el('span', null, '🔖 Search wikis in place — drag '),
+    bm,
+    el('span', null, ' to your bookmarks bar. '),
+    how,
+  );
+  els.promo.hidden = false;
 };
 
 const main = async () => {

@@ -14,8 +14,8 @@ https://cdn.jsdelivr.net/npm/minisearch@7.2.0/dist/es/index.js
 - **Why vendored:** the app is a zero-build static site, so it imports MiniSearch
   directly as a single self-contained ESM file (no relative imports, no
   bundler). Pinned to an exact version for reproducibility.
-- **Chosen** over the hand-rolled ranker (`engine/search.js`) by the S3 A/B —
-  see [`../../spikes/s3/NOTES.md`](../../spikes/s3/NOTES.md).
+- **Chosen** over the hand-rolled ranker (`engine/search.js`) by an A/B on real
+  wiki content — clearly better relevance on conceptual, multi-word queries.
 
 To update: refetch the same `dist/es/index.js` at the new pinned version, and
 refresh this note plus the license text if upstream's copyright changed.

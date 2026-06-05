@@ -2,9 +2,9 @@
 // (engine/vendor/minisearch.mjs). Same { buildIndex, query, ENGINE_NAME }
 // interface as engine/search.js, which stays as a zero-dependency fallback.
 //
-// Chosen over the hand-rolled ranker by the S3 A/B (spikes/s3/NOTES.md) for
-// clearly better relevance on conceptual, multi-word queries. Phrase + snippet
-// come from the shared engine/phrase.js.
+// Chosen over the hand-rolled ranker by an A/B on real wiki content for clearly
+// better relevance on conceptual, multi-word queries. Phrase + snippet come from
+// the shared engine/phrase.js.
 
 import MiniSearch from './vendor/minisearch.mjs';
 import { pickPhrase, snippetAround } from './phrase.js';

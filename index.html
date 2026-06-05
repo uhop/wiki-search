@@ -128,9 +128,8 @@
   </p>
 
   <noscript>
-    <p class="note"><strong>JavaScript is off.</strong> The draggable bookmarklet
-    is generated in your browser, so enable JavaScript to get it — or build it
-    yourself with <code>node bookmarklet/build.mjs --app=…/app/</code>.</p>
+    <p class="note"><strong>JavaScript is off.</strong> Enable it to grab the
+    bookmarklet — it's a small launcher that needs JavaScript to run anyway.</p>
   </noscript>
 
   <h2>How it works</h2>
@@ -151,22 +150,15 @@
   </footer>
 
   <script type="module">
-    import { buildBookmarklet } from './bookmarklet/build-core.js';
+    import { BOOKMARKLET } from './bookmarklet/bookmarklet.js';
 
-    const appUrl = new URL('app/', location.href).href; // the search app on this origin
     const bm = document.getElementById('bm');
     const code = document.getElementById('bm-code');
     const copy = document.getElementById('copy');
 
-    try {
-      const src = await fetch('./bookmarklet/stub.js').then(r => r.text());
-      const href = buildBookmarklet(src, appUrl);
-      bm.href = href;
-      bm.removeAttribute('aria-disabled');
-      code.value = href;
-    } catch {
-      code.value = 'Could not build the bookmarklet (stub.js unreachable). Run: node bookmarklet/build.mjs --app=' + appUrl;
-    }
+    bm.href = BOOKMARKLET;
+    bm.removeAttribute('aria-disabled');
+    code.value = BOOKMARKLET;
 
     copy.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(code.value); }
