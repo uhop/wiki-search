@@ -1,72 +1,52 @@
 # wiki-search
 
-A reusable, self-describing search kit for any wiki or docs site. Generate a
-versioned JSON index from your docs, host it anywhere CORS-readable, and point a
-hosted search app and/or a bookmarklet at it. Clients assume nothing beyond a
-self-describing JSON contract; every failure explains itself.
+GitHub wikis are great for docs but have no real search. **wiki-search adds it:**
+a bookmarklet (plus a hosted search page) that searches a wiki and takes you
+straight to the matching section — without moving your docs off the wiki.
 
-It exists because open GitHub wikis are great for docs but have no good search —
-and their CSP blocks on-page search engines. wiki-search bolts search *beside*
-the wiki instead of migrating docs away from it.
+**▶ [Try the live demo & install the bookmarklet](https://uhop.github.io/wiki-search/)**
 
-**▶ [Live demo & bookmarklet install](https://uhop.github.io/wiki-search/)** —
-drag the bookmarklet to your bookmarks bar, then search any GitHub wiki in place.
+## Use it
 
-> **Status: early.** The architecture is designed (see below) and the **S1
-> spike** — proving the approach end-to-end — is in `spikes/s1/`. The
-> production builder and app are being built out phase by phase.
+- **Search a wiki.** Drag the bookmarklet to your bookmarks bar, then open any
+  GitHub wiki that has a wiki-search index and search — each result jumps you to
+  the exact section. ([Try it now](https://uhop.github.io/wiki-search/app/?wiki=uhop/wiki-search)
+  on this project's own wiki — no install needed.)
+- **Add search to your own wiki.** Build an index from your Markdown — needs
+  [Node](https://nodejs.org), nothing to install:
 
-## Live demo
+  ```bash
+  node builder/wiki-index.mjs --wiki ./your-wiki   # → your-wiki/search-index.json
+  ```
 
-`.github/workflows/pages.yml` publishes the app on every push to `main`:
-
-- **[Install page](https://uhop.github.io/wiki-search/)** (the Pages root) —
-  drag the bookmarklet to your bookmarks bar. It generates the
-  `javascript:` link from the same origin it's served from, so a fork's page
-  yields a fork-correct bookmarklet.
-- **[Search app](https://uhop.github.io/wiki-search/app/?wiki=uhop/wiki-search)** —
-  the app pointed at this project's own wiki.
-
-Or run it locally -- `python3 -m http.server` from the repo root, then open
-<http://localhost:8000/app/?wiki=uhop/wiki-search>.
+  Commit that `search-index.json` into your wiki, then point readers at the
+  bookmarklet or search page. More options in [`builder/README.md`](builder/README.md).
 
 ## How it works
 
-The bookmarklet is a permanent thin `window.open` stub; all logic lives in a
-GitHub Pages app **on its own origin**. A `window.open`ed window is a new
-top-level browsing context, so the host wiki page's content-security policy
-doesn't govern it — the app has full engine freedom and is updatable without
-re-saving the bookmark (the same trick as Flipboard's classic "Flip It"
-bookmarklet). Results are real `<a>` links carrying
-[Text Fragment](https://developer.mozilla.org/docs/Web/Text_fragments)
-directives (`#anchor:~:text=…`). By default a click re-uses your wiki tab in
-place and scrolls to the section (Back returns you); the `:~:text=` highlight is
-emitted too and shown wherever the browser honors it. "New tab (highlight)" and
-"reused tab" remain selectable in the app's Options for a guaranteed highlight.
+The bookmarklet opens the search page on its own GitHub Pages origin, so the
+wiki page's security policy can't block it. There it loads a small JSON index
+built from the wiki's Markdown and links each result with a
+[text fragment](https://developer.mozilla.org/docs/Web/Text_fragments), so your
+browser scrolls to — and, where supported, highlights — the matched phrase. By
+default a result re-uses your current tab; Back returns you. The index carries
+its own URL template, so the same app works for any site with no hardcoded host.
 
-The index is a versioned, self-describing JSON document: it carries its own
-`site.urlTemplate`, so result URLs are built mechanically with no hardcoded host.
-That's what makes the kit reusable beyond any one site.
-
-## Layout
+<details>
+<summary>Repo layout & local run</summary>
 
 | Path | What |
 |------|------|
 | `index.html` | Landing + bookmarklet-install page (the Pages root). |
 | `app/` | The search page (loads + validates an index, searches, links out). |
-| `engine/` | Search core (swappable; engine choice TBD). |
-| `bookmarklet/` | The `window.open` stub + `build-core.js` (shared Node/browser builder) + `build.mjs` CLI. |
-| `spikes/s1/` | The Path-P end-to-end spike: sample index, run notes, smoke test. |
+| `builder/` | `wiki-index` CLI: Markdown → the JSON index. |
+| `engine/` | Search core: MiniSearch (vendored), with a zero-dep fallback. |
+| `bookmarklet/` | The `window.open` stub + builder. |
 
-## Try the spike
+Run locally: `python3 -m http.server` from the repo root, then open
+<http://localhost:8000/app/?wiki=uhop/wiki-search>.
 
-```bash
-node spikes/s1/smoke.mjs          # headless: ranked results + text-fragment URLs
-python3 -m http.server 8080       # then open http://localhost:8080/app/
-```
-
-See [`spikes/s1/NOTES.md`](spikes/s1/NOTES.md) for the full run, the real-CSP
-bookmarklet test, and go/no-go criteria.
+</details>
 
 ## License
 
