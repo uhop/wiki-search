@@ -1,0 +1,25 @@
+// builder/lib/slug.mjs — GitHub-style heading slugs (approximates github-slugger).
+//
+// GitHub lowercases a heading, strips most punctuation, turns spaces into
+// hyphens, and disambiguates repeats *within a page* as -1, -2, …. This is a
+// close approximation, good enough for English docs; S2/S3 verify the anchors
+// against real rendered pages and flag any divergence.
+
+export const slugify = text =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{L}\p{N}_ -]+/gu, '') // keep letters, digits, underscore, space, hyphen
+    .replace(/\s+/g, '-');
+
+// A per-page deduping slugger: call the returned fn on each heading in document
+// order so duplicates get GitHub's -1 / -2 / … suffixes.
+export const createSlugger = () => {
+  const seen = new Map();
+  return text => {
+    const base = slugify(text);
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return n === 0 ? base : `${base}-${n}`;
+  };
+};
