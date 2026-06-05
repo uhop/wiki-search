@@ -20,13 +20,13 @@ const handle = buildIndex(index.docs);
 const SITE = index.site;
 
 // Mirror app.js resultUrl()/encodeTextDirective() so the printed URLs match.
-function resultUrl(doc, phrase) {
+const resultUrl = (doc, phrase) => {
   const base = SITE.urlTemplate.replace('{page}', encodeURIComponent(doc.page));
   const anchor = doc.anchor ? String(doc.anchor) : '';
   const textDir = SITE.fragments !== false && phrase
     ? `:~:text=${encodeURIComponent(phrase).replace(/-/g, '%2D')}` : '';
   return (!anchor && !textDir) ? base : `${base}#${anchor}${textDir}`;
-}
+};
 
 const queries = process.argv.slice(2).length
   ? [process.argv.slice(2).join(' ')]

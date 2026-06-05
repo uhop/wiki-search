@@ -19,17 +19,16 @@ const WORD = /[^\p{L}\p{N}]+/u;
 // spike's tiny corpus. Not load-bearing; a real engine brings its own.
 const STOP = new Set('a an and are as at be by for from in is of on or the to with'.split(' '));
 
-function tokenize(s) {
-  return String(s || '')
+const tokenize = s =>
+  String(s || '')
     .toLowerCase()
     .split(WORD)
     .filter(t => t.length > 1 && !STOP.has(t));
-}
 
 // Field weights: a hit in the title beats a hit in a heading beats body text.
 const FIELD_WEIGHT = { title: 4, heading: 3, text: 1 };
 
-export function buildIndex(docs) {
+export const buildIndex = docs => {
   const entries = docs.map(doc => {
     // Accumulate a term -> weight map across the doc's weighted fields.
     const weights = new Map();
@@ -41,9 +40,9 @@ export function buildIndex(docs) {
     return { doc, weights };
   });
   return { entries };
-}
+};
 
-export function query(handle, q, { limit = 20 } = {}) {
+export const query = (handle, q, { limit = 20 } = {}) => {
   const terms = tokenize(q);
   if (!terms.length) return [];
   const uniq = [...new Set(terms)];
@@ -65,12 +64,12 @@ export function query(handle, q, { limit = 20 } = {}) {
 
   scored.sort((a, b) => b.score - a.score || a.doc.id - b.doc.id);
   return scored.slice(0, limit);
-}
+};
 
 // Find an exact substring of `text` to drive the text-fragment highlight, and a
 // short display snippet around it. Prefers the whole query phrase if it appears
 // verbatim; otherwise the longest single query term that does.
-function locate(text, rawQuery, terms) {
+const locate = (text, rawQuery, terms) => {
   const hay = text.toLowerCase();
   const whole = rawQuery.trim().toLowerCase();
 
@@ -91,4 +90,4 @@ function locate(text, rawQuery, terms) {
   const end = Math.min(text.length, at + len + 100);
   const snippet = (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
   return { phrase, snippet };
-}
+};
