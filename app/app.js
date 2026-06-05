@@ -123,11 +123,18 @@ const encodeTextDirective = s => encodeURIComponent(s).replace(/-/g, '%2D');
 // No hardcoded github.com — a non-GitHub site just ships a different urlTemplate.
 const resultUrl = (doc, phrase) => {
   const base = SITE.urlTemplate.replace('{page}', encodeURIComponent(doc.page));
-  const anchor = MODES.anchor && doc.anchor ? String(doc.anchor) : '';
   // Drop the text directive when unsupported/disabled: in a non-consuming browser
   // a trailing :~:text= would corrupt the #anchor and break the scroll fallback too.
   const useText = MODES.text && FRAGMENTS_SUPPORTED && SITE.fragments !== false && phrase;
   const textDir = useText ? `:~:text=${encodeTextDirective(phrase)}` : '';
+  // GitHub scrolls bare #slug anchors with its own client-side shim, which fights
+  // the text-fragment scroll -- you land at the anchored section while the
+  // highlight sits at the first match elsewhere on the page. So on GitHub, when we
+  // emit a text directive, drop the #anchor and let the directive position alone.
+  // Other sites honour the spec (the text directive wins; the anchor stays a
+  // harmless no-match fallback), so keep both there.
+  const onGitHub = SITE.urlTemplate.includes('github.com');
+  const anchor = MODES.anchor && doc.anchor && !(textDir && onGitHub) ? String(doc.anchor) : '';
   if (!anchor && !textDir) return base;
   return `${base}#${anchor}${textDir}`;
 };
