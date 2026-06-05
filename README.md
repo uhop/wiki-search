@@ -13,6 +13,17 @@ the wiki instead of migrating docs away from it.
 > spike** — proving the approach end-to-end — is in `spikes/s1/`. The
 > production builder and app are being built out phase by phase.
 
+## Live demo
+
+Once GitHub Pages is enabled (repo Settings -> Pages -> Source: "GitHub
+Actions"), `.github/workflows/pages.yml` publishes the app on every push to
+`main`:
+
+    https://uhop.github.io/wiki-search/app/?wiki=uhop/wiki-search
+
+Or run it locally -- `python3 -m http.server` from the repo root, then open
+`http://localhost:8000/app/?wiki=uhop/wiki-search`.
+
 ## How it works — Path P
 
 The bookmarklet is a permanent thin `window.open` stub; all logic lives in a

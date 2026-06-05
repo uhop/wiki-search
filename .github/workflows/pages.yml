@@ -1,0 +1,45 @@
+name: Deploy app to GitHub Pages
+
+# Publishes the static search app to GitHub Pages via an Actions deploy. Checks
+# out WITHOUT submodules: the app doesn't need the wiki/ submodule -- it loads
+# the index from raw.githubusercontent.com at runtime -- so skipping it keeps the
+# build minimal (and avoids fetching the wiki on every deploy).
+#
+# Enable once in repo Settings -> Pages -> Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r app engine spikes index.html .nojekyll _site/
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
