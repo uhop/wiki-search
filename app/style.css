@@ -40,6 +40,7 @@ header { padding: 12px 14px 8px; border-bottom: 1px solid var(--border); }
 }
 #q:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
 
+.promo[hidden] { display: none; } /* .promo's display:flex (author) overrides the UA [hidden] rule — restore it */
 .promo {
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
   margin-bottom: 10px; padding: 7px 10px;
