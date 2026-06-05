@@ -1,15 +1,18 @@
-// engine/search.js — minimal, dependency-free ranked search for the S1 spike.
+// engine/search.js — minimal, dependency-free ranked search. Kept as the
+// zero-dependency fallback / reference; the app uses engine/minisearch.js by
+// default (chosen by the S3 A/B).
 //
-// The interface is deliberately tiny so a real engine (MiniSearch / Orama) can
-// replace it wholesale at S3/Phase 1 without the app caring:
+// The interface is deliberately tiny so engines are interchangeable:
 //
 //     buildIndex(docs)            -> handle
 //     query(handle, q, {limit})   -> [{ doc, score, phrase, snippet }]
 //     ENGINE_NAME                  -> string (shown in the status line)
 //
 // `doc` is one entry from index.docs: { id, page, title, heading, anchor, text }.
-// `phrase` is an exact substring of doc.text suitable for a `:~:text=` directive
-// (or null). `snippet` is a short display window around the match.
+// Phrase + snippet come from the shared engine/phrase.js, so links and highlights
+// match the MiniSearch engine.
+
+import { pickPhrase, snippetAround } from './phrase.js';
 
 export const ENGINE_NAME = 'spike/hand-rolled';
 
@@ -58,36 +61,11 @@ export const query = (handle, q, { limit = 20 } = {}) => {
     if (!score) continue;
     // AND-bonus: reward docs that cover every query term.
     if (matched === uniq.length && uniq.length > 1) score *= 1.5;
-    const { phrase, snippet } = locate(entry.doc.text || '', q, uniq);
-    scored.push({ doc: entry.doc, score, phrase, snippet });
+    const { doc } = entry;
+    const phrase = pickPhrase(doc.text || '', q, doc.heading || '');
+    scored.push({ doc, score, phrase, snippet: snippetAround(doc.text || '', phrase) });
   }
 
   scored.sort((a, b) => b.score - a.score || a.doc.id - b.doc.id);
   return scored.slice(0, limit);
-};
-
-// Find an exact substring of `text` to drive the text-fragment highlight, and a
-// short display snippet around it. Prefers the whole query phrase if it appears
-// verbatim; otherwise the longest single query term that does.
-const locate = (text, rawQuery, terms) => {
-  const hay = text.toLowerCase();
-  const whole = rawQuery.trim().toLowerCase();
-
-  let at = whole ? hay.indexOf(whole) : -1;
-  let len = whole.length;
-
-  if (at < 0) {
-    for (const term of [...terms].sort((a, b) => b.length - a.length)) {
-      const i = hay.indexOf(term);
-      if (i >= 0) { at = i; len = term.length; break; }
-    }
-  }
-
-  if (at < 0) return { phrase: null, snippet: text.slice(0, 160) };
-
-  const phrase = text.slice(at, at + len); // exact-cased, as it appears on the page
-  const start = Math.max(0, at - 60);
-  const end = Math.min(text.length, at + len + 100);
-  const snippet = (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
-  return { phrase, snippet };
 };

@@ -67,12 +67,16 @@ scrolls to `user-content-options`. Consequences for us:
   the id mismatch entirely. Treat it as primary.
 - **`#anchor` (bare slug) is a best-effort fallback** that depends on GitHub's
   shim. The index stores the bare slug (the form GitHub's own links use).
-- **Possible scroll conflict:** on a supporting browser, `#options:~:text=…`
-  may trigger *both* the shim's scroll-to-`user-content-options` and the
-  text-directive scroll. If they fight (a visible jump), the fix is to **drop
-  the `#anchor`** and let `:~:text=` position alone — test this with
-  `?anchor=off` in the app. Decide per the real-page result; the lever exists so
-  Phase 1's builder can bake the winning choice into result-URL generation.
+- **Scroll conflict — RESOLVED (confirmed live 2026-06-04).** On GitHub a
+  `#slug:~:text=…` URL triggers *both* the shim's scroll-to-`user-content-slug`
+  and the text-directive scroll; the shim wins, so you land at the anchored
+  section while the highlight sits at the first match elsewhere on the page.
+  **Fix shipped:** `app/app.js` `resultUrl()` emits the text directive *instead
+  of* the `#anchor` on GitHub (the anchor is kept only as the no-text fallback,
+  and still paired with text on non-GitHub sites, where the spec lets the
+  directive win). Paired with phrase-widening + heading-preference in
+  `engine/phrase.js` so the directive lands in the right section. `?anchor=off`
+  remains as an A/B lever.
 
 ## Same-tab spike — findings
 
@@ -98,8 +102,9 @@ same-tab option that preserves the highlight.
 | G1 | `#anchor + :~:text=` highlights in all three modern engines (new tab) | visible highlight |
 | G2 | Anchor-only fallback scrolls where `:~:text=` is unsupported | section in view |
 | G3 | Reused-tab (named target) keeps the highlight | highlight + one tab reused |
-| G4 | No disruptive scroll conflict from GitHub's shim (or `?anchor=off` resolves it) | lands cleanly |
+| G4 | No disruptive scroll conflict from GitHub's shim | RESOLVED: anchor dropped on GitHub when text is emitted |
 
-G1–G2 are the hard gate. G4's resolution (keep vs drop `#anchor` on GitHub)
-feeds Phase 1's builder. Same-tab in v1 vs new-tab-only is still an open queue
-decision; this spike says reused-tab is viable and highlight-preserving.
+G1–G2 are the hard gate. G4 is resolved (drop `#anchor` on GitHub when a text
+directive is present; keep both elsewhere) in `app/app.js`. Same-tab in v1 vs
+new-tab-only is still an open queue decision; this spike says reused-tab is
+viable and highlight-preserving.
