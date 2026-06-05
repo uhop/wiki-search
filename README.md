@@ -9,26 +9,26 @@ It exists because open GitHub wikis are great for docs but have no good search �
 and their CSP blocks on-page search engines. wiki-search bolts search *beside*
 the wiki instead of migrating docs away from it.
 
+**▶ [Live demo & bookmarklet install](https://uhop.github.io/wiki-search/)** —
+drag the bookmarklet to your bookmarks bar, then search any GitHub wiki in place.
+
 > **Status: early.** The architecture is designed (see below) and the **S1
 > spike** — proving the approach end-to-end — is in `spikes/s1/`. The
 > production builder and app are being built out phase by phase.
 
 ## Live demo
 
-Once GitHub Pages is enabled (repo Settings -> Pages -> Source: "GitHub
-Actions"), `.github/workflows/pages.yml` publishes the app on every push to
-`main`:
+`.github/workflows/pages.yml` publishes the app on every push to `main`:
 
-    https://uhop.github.io/wiki-search/app/?wiki=uhop/wiki-search
-
-The Pages **root** (`index.html`) is the landing + bookmarklet-install page; it
-generates a drag-to-bookmarks `javascript:` link from the same origin it's served
-from (so a fork's page yields a fork-correct bookmarklet):
-
-    https://uhop.github.io/wiki-search/
+- **[Install page](https://uhop.github.io/wiki-search/)** (the Pages root) —
+  drag the bookmarklet to your bookmarks bar. It generates the
+  `javascript:` link from the same origin it's served from, so a fork's page
+  yields a fork-correct bookmarklet.
+- **[Search app](https://uhop.github.io/wiki-search/app/?wiki=uhop/wiki-search)** —
+  the app pointed at this project's own wiki.
 
 Or run it locally -- `python3 -m http.server` from the repo root, then open
-`http://localhost:8000/app/?wiki=uhop/wiki-search`.
+<http://localhost:8000/app/?wiki=uhop/wiki-search>.
 
 ## How it works — Path P
 
