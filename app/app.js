@@ -7,13 +7,29 @@
 // never a blank box), searches, and renders results as real <a> links.
 //
 // Positioning (S2): result links carry Text Fragment directives
-// (`#anchor:~:text=phrase`). Three levers, exposed in the settings row so the
-// behaviour can be A/B'd on a real GitHub wiki page:
-//   - target: new tab | reused named tab | the original (opener) tab
-//   - #anchor on/off  (structural scroll fallback)
-//   - :~:text= on/off (native highlight; auto-off where unsupported)
+// (`#anchor:~:text=phrase`). The DEFAULT when launched via the bookmarklet is to
+// re-use the wiki tab in place (no tab spam, Back returns you). We emit the
+// :~:text= highlight in EVERY mode and let the browser decide whether to honor
+// it — in-place navigation is script-initiated so the directive usually won't
+// fire, but the #anchor still scrolls to the section, and if a browser does
+// honor a different-page nav we get the highlight for free.
+//
+// The one carve-out is GitHub: with BOTH #anchor and :~:text= present, GitHub's
+// own scroll-shim fights the directive (you land at the heading while the
+// highlight sits at the first match elsewhere — confirmed live 2026-06-04, S2
+// G4). So we drop the #anchor on GitHub ONLY in the modes where the highlight
+// actually fires (isolated, user-initiated new/reused tab); in-place keeps both
+// (its directive won't fire, so there's no fight and the anchor still scrolls).
+// All three target modes stay behind the "Options" disclosure for the manual
+// cross-browser gates.
+//
+// Transience: when running as a bookmarklet popup, the window closes itself on
+// blur, on Escape, and after a result click — the extension-popup feel modelled
+// on ~/Open/page-dom-stats. The last query is persisted so an accidental blur
+// doesn't lose your search.
 
 import { buildIndex, query, ENGINE_NAME } from '../engine/minisearch.js';
+import { buildBookmarklet } from '../bookmarklet/build-core.js';
 
 const SUPPORTED_VERSIONS = [1];
 const DEFAULT_WIKI_INDEX_FILE = 'search-index.json'; // convention used only by the ?wiki shortcut (open decision, S1)
@@ -21,6 +37,7 @@ const SPIKE_FALLBACK_INDEX = '../spikes/s1/sample-index.json';
 
 const els = {
   q: document.getElementById('q'),
+  promo: document.getElementById('promo'),
   status: document.getElementById('status'),
   results: document.getElementById('results'),
   engine: document.getElementById('engine'),
@@ -127,14 +144,20 @@ const resultUrl = (doc, phrase) => {
   // a trailing :~:text= would corrupt the #anchor and break the scroll fallback too.
   const useText = MODES.text && FRAGMENTS_SUPPORTED && SITE.fragments !== false && phrase;
   const textDir = useText ? `:~:text=${encodeTextDirective(phrase)}` : '';
-  // GitHub scrolls bare #slug anchors with its own client-side shim, which fights
-  // the text-fragment scroll -- you land at the anchored section while the
-  // highlight sits at the first match elsewhere on the page. So on GitHub, when we
-  // emit a text directive, drop the #anchor and let the directive position alone.
-  // Other sites honour the spec (the text directive wins; the anchor stays a
-  // harmless no-match fallback), so keep both there.
+  // GitHub's client-side shim scrolls bare #slug anchors and fights the
+  // text-fragment scroll -- you land at the anchored section while the highlight
+  // sits at the first match elsewhere (confirmed live 2026-06-04). So on GitHub
+  // drop the #anchor and let the directive position alone -- but ONLY in the modes
+  // where the directive actually fires (isolated, user-initiated new/reused tab).
+  // In-place (opener) nav is script-initiated, so the directive usually won't fire
+  // and there's no fight: keep BOTH so the #anchor still scrolls the section, and
+  // emit the directive anyway (the browser decides -- bonus highlight if it does).
+  // Non-GitHub sites honour the spec (directive wins, anchor is a harmless
+  // fallback), so keep both there too.
   const onGitHub = SITE.urlTemplate.includes('github.com');
-  const anchor = MODES.anchor && doc.anchor && !(textDir && onGitHub) ? String(doc.anchor) : '';
+  const inPlace = MODES.target === 'opener';
+  const dropAnchor = textDir && onGitHub && !inPlace;
+  const anchor = MODES.anchor && doc.anchor && !dropAnchor ? String(doc.anchor) : '';
   if (!anchor && !textDir) return base;
   return `${base}#${anchor}${textDir}`;
 };
@@ -150,21 +173,28 @@ const markSnippet = (node, snippet, phrase) => {
   );
 };
 
+// Close the popup, but only when we actually are one (launched via the
+// bookmarklet, so window.opener exists). A standalone tab must never self-close.
+const closePopup = () => { if (window.opener) { try { window.close(); } catch {} } };
+
 // Wire the result link's navigation per the active target mode. Text fragments
-// require *user-initiated* navigation, so a real <a> click keeps them working
-// for new and reused tabs. 'opener' navigates the original wiki tab via script —
-// same tab, but the highlight is lost (the S2 trade-off, made visible).
+// require *user-initiated* navigation, so a real <a> click keeps them working for
+// new and reused tabs. 'opener' navigates the original wiki tab via script (same
+// tab, Back returns you) — the directive is emitted anyway (see resultUrl). Any
+// result click dismisses the transient popup.
 const applyTarget = a => {
   if (MODES.target === 'opener' && window.opener) {
     a.addEventListener('click', e => {
       e.preventDefault();
       window.opener.location.href = a.href;
       try { window.opener.focus(); } catch {}
+      setTimeout(closePopup, 0); // get out of the way once the tab is on its way
     });
     return;
   }
   a.target = MODES.target === 'tab' ? 'wiki-search-result' : '_blank';
-  a.rel = 'noopener';
+  a.rel = 'noopener'; // isolated context → the Text Fragment highlight is honored
+  // The new/reused tab steals focus → window blur → the blur handler closes us.
 };
 
 const renderHit = ({ doc, phrase, snippet }) => {
@@ -197,7 +227,9 @@ const run = () => {
 // Reflect text-fragment support + URL-param defaults into the settings row, and
 // rebuild result links whenever the user flips a lever.
 const wireSettings = params => {
-  MODES.target = params.get('target') || 'new';
+  // Default to in-place (re-use the wiki tab) when we're a bookmarklet popup;
+  // a standalone tab has no opener to navigate, so it falls back to a new tab.
+  MODES.target = params.get('target') || (window.opener ? 'opener' : 'new');
   MODES.anchor = params.get('anchor') !== 'off';
   MODES.text = params.get('text') !== 'off';
 
@@ -230,10 +262,51 @@ const wireSettings = params => {
   els.text.addEventListener('change', sync);
 };
 
+// Transient-popup dismissal — only when we're actually a bookmarklet popup.
+// Extension-popup feel: close when focus truly leaves the window. Re-check after
+// a tick with document.hasFocus() so opening the <select> or moving focus within
+// the document doesn't kill the popup mid-search. Escape closes it too.
+const wirePopupDismissal = () => {
+  if (!window.opener) return;
+  window.addEventListener('blur', () => setTimeout(() => {
+    if (!document.hasFocus()) closePopup();
+  }, 0));
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') closePopup(); });
+};
+
+// Standalone (not a popup): pitch the bookmarklet above the search box, with a
+// real draggable javascript: link built from THIS origin — so a fork's page
+// yields a fork-correct bookmarklet with zero config. Hidden when launched via
+// the bookmarklet (you already have it).
+const setupPromo = async () => {
+  if (window.opener || !els.promo) return;
+  try {
+    const appUrl = new URL('.', location.href).href; // this app, sans query
+    const src = await fetch('../bookmarklet/stub.js').then(r => r.text());
+    const bm = el('a', 'bm', '🔍 Wiki Search');
+    bm.href = buildBookmarklet(src, appUrl);
+    bm.title = 'Drag me to your bookmarks bar (clicking here does nothing)';
+    bm.draggable = true;
+    const how = el('a', 'how', 'How to install ›');
+    how.href = '../'; // the landing / install page at the Pages root
+    els.promo.append(
+      el('span', null, '🔖 Search wikis in place — drag '),
+      bm,
+      el('span', null, ' to your bookmarks bar. '),
+      how,
+    );
+    els.promo.hidden = false;
+  } catch {
+    // stub unreachable (e.g. opened from file://) — skip the pitch silently.
+  }
+};
+
 const main = async () => {
   els.engine.textContent = ENGINE_NAME;
   const params = new URLSearchParams(location.search);
   wireSettings(params);
+  wirePopupDismissal();
+  setupPromo();
 
   const { url, note } = resolveIndexUrl(params);
   setStatus(note ? note + ' — loading index…' : 'Loading index…');
@@ -249,9 +322,23 @@ const main = async () => {
   HANDLE = buildIndex(index.docs);
   setStatus(`${SITE.name} · ${index.docs.length} sections indexed${note ? ' · ' + note : ''}`);
 
-  els.q.addEventListener('input', debounce(run, 90));
+  // Persist the query so an accidental blur-close doesn't lose it; restore (and
+  // select, so typing replaces) on next open. Keyed per index so distinct wikis
+  // don't bleed into each other.
+  const qKey = 'wiki-search:q:' + (params.get('wiki') || params.get('index') || '');
+  const save = () => { try { localStorage.setItem(qKey, els.q.value); } catch {} };
+  const debouncedRun = debounce(run, 90);
+  els.q.addEventListener('input', () => { save(); debouncedRun(); });
+
   const initial = params.get('q');
-  if (initial) { els.q.value = initial; run(); }
+  if (initial) {
+    els.q.value = initial;
+    run();
+  } else {
+    let saved = '';
+    try { saved = localStorage.getItem(qKey) || ''; } catch {}
+    if (saved) { els.q.value = saved; els.q.select(); run(); }
+  }
 };
 
 main();

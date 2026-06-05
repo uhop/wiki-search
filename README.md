@@ -21,6 +21,12 @@ Actions"), `.github/workflows/pages.yml` publishes the app on every push to
 
     https://uhop.github.io/wiki-search/app/?wiki=uhop/wiki-search
 
+The Pages **root** (`index.html`) is the landing + bookmarklet-install page; it
+generates a drag-to-bookmarks `javascript:` link from the same origin it's served
+from (so a fork's page yields a fork-correct bookmarklet):
+
+    https://uhop.github.io/wiki-search/
+
 Or run it locally -- `python3 -m http.server` from the repo root, then open
 `http://localhost:8000/app/?wiki=uhop/wiki-search`.
 
@@ -32,8 +38,10 @@ top-level browsing context, so the host wiki page's CSP doesn't govern it — th
 app has full engine freedom and is updatable without re-saving the bookmark (the
 Flipboard "Flip It" pattern). Results are real `<a>` links carrying
 [Text Fragment](https://developer.mozilla.org/docs/Web/Text_fragments)
-directives (`#anchor:~:text=…`) so clicking one lands on — and highlights — the
-matched section.
+directives (`#anchor:~:text=…`). By default a click re-uses your wiki tab in
+place and scrolls to the section (Back returns you); the `:~:text=` highlight is
+emitted too and shown wherever the browser honors it. "New tab (highlight)" and
+"reused tab" remain selectable in the app's Options for a guaranteed highlight.
 
 The index is a versioned, self-describing JSON document: it carries its own
 `site.urlTemplate`, so result URLs are built mechanically with no hardcoded host.
@@ -43,9 +51,10 @@ That's what makes the kit reusable beyond any one site.
 
 | Path | What |
 |------|------|
+| `index.html` | Landing + bookmarklet-install page (the Pages root). |
 | `app/` | The search page (loads + validates an index, searches, links out). |
 | `engine/` | Search core (swappable; engine choice TBD). |
-| `bookmarklet/` | The `window.open` stub + minifier (`build.mjs`). |
+| `bookmarklet/` | The `window.open` stub + `build-core.js` (shared Node/browser builder) + `build.mjs` CLI. |
 | `spikes/s1/` | The Path-P end-to-end spike: sample index, run notes, smoke test. |
 
 ## Try the spike

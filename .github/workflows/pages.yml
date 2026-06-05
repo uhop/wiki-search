@@ -35,7 +35,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site
-          cp -r app engine spikes index.html .nojekyll _site/
+          cp -r app engine spikes bookmarklet index.html .nojekyll _site/
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -82,18 +82,34 @@ scrolls to `user-content-options`. Consequences for us:
 
 Three target modes (app setting / `?target=`):
 
-- **`new` (default, `_blank`)** — guaranteed fresh tab; text fragment fires.
+- **`new` (`_blank`)** — guaranteed fresh tab; text fragment fires.
 - **`tab` (reused named target `wiki-search-result`)** — a real `<a target=…>`
   click is still *user-initiated*, so text fragments **keep working** while all
-  results share one tab. **This is the recommended same-tab answer.**
+  results share one tab.
 - **`opener` (navigate the original wiki tab via `window.opener.location`)** —
   truly the same tab the user came from, but it's a **script-initiated**
-  navigation, so the text directive does **not** activate — only `#anchor`
-  scroll (if the shim cooperates). Highlight is lost. Kept as a mode to make the
-  trade-off visible; not recommended.
+  navigation, so the text directive was **not** observed to activate in the early
+  probe — only `#anchor` scroll (if the shim cooperates).
 
-Takeaway: prefer a **reused named tab** over opener-navigation — it's the only
-same-tab option that preserves the highlight.
+### Production decision (2026-06-05) — default flipped to in-place
+
+The UX pass made **`opener` (in-place) the default** when launched via the
+bookmarklet: re-using the wiki tab (Back returns you) beats tab-spam, and the
+popup is now transient (closes on result-click / blur / Esc). Because in-place is
+the default, `resultUrl()` now **emits `#anchor:~:text=` together** in opener mode
+(rather than dropping the highlight): the directive costs nothing if it doesn't
+fire, and the `#anchor` still scrolls. The GitHub anchor-drop (G4) is therefore
+scoped to the *firing* modes only (new / reused tab), where both-present would
+otherwise refight the shim.
+
+**Open manual-gate question (verifies a maintainer recollection):** does a
+**script-initiated** opener navigation to a *different page* ever activate the
+`:~:text=` highlight in current Chrome/Edge, Firefox ≥131, Safari ≥18.2? The
+early probe only established that same-tab scripted nav lost it; the
+different-page case wasn't isolated. If any engine honors it, in-place gets the
+highlight for free; if none do, the section-scroll is the expected in-place
+behavior. Spec reading (browsing-context-group isolation) predicts *no*, but
+confirm on real pages.
 
 ## Go / no-go
 

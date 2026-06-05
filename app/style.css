@@ -40,13 +40,32 @@ header { padding: 12px 14px 8px; border-bottom: 1px solid var(--border); }
 }
 #q:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
 
-.settings {
+.promo {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px;
+  margin-bottom: 10px; padding: 7px 10px;
+  font-size: 12px; color: var(--muted);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 8px;
+}
+.promo .bm {
+  display: inline-block; padding: 2px 8px;
+  font-weight: 600; color: var(--accent); text-decoration: none;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 6px; cursor: grab; white-space: nowrap;
+}
+.promo .bm:active { cursor: grabbing; }
+.promo .how { margin-left: auto; color: var(--accent); white-space: nowrap; }
+
+.settings { margin-top: 8px; }
+.settings > summary { width: max-content; font-size: 12px; color: var(--muted); cursor: pointer; }
+.opts {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
   margin-top: 8px; font-size: 12px; color: var(--muted);
 }
-.settings label { display: inline-flex; align-items: center; gap: 5px; }
-.settings code { font-size: 11px; color: var(--fg); }
-.settings select {
+.opts label { display: inline-flex; align-items: center; gap: 5px; }
+.opts code { font-size: 11px; color: var(--fg); }
+.opts select {
   font: inherit; color: var(--fg); background: var(--bg);
   border: 1px solid var(--border); border-radius: 6px; padding: 1px 4px;
 }
