@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>S2 — text-fragment positioning probe</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    #panel {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+      background: Canvas; border-bottom: 1px solid #8884; padding: 10px 14px;
+      box-shadow: 0 2px 8px #0002;
+    }
+    #panel strong { font-size: 13px; }
+    .note { font-size: 12px; margin: 4px 0; }
+    .note.ok { color: #1a7f37; }
+    .note.warn { color: #bf8700; }
+    #active { font-size: 12px; opacity: .8; margin: 4px 0; }
+    .grid { display: grid; gap: 4px; margin: 6px 0 2px; }
+    .row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .row .lbl { flex: 0 0 16em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .row a { color: #0969da; }
+    .hint { font-size: 11px; opacity: .7; margin-top: 4px; }
+    main { padding: 200px 16px 80vh; max-width: 52em; margin: 0 auto; }
+    section { min-height: 78vh; padding-top: 12px; border-top: 1px dashed #8883; }
+    h2 { font-size: 20px; }
+    p { color: #444c; }
+    @media (prefers-color-scheme: dark) { p { color: #bbbc; } .note.ok { color: #3fb950; } }
+  </style>
+</head>
+<body>
+  <div id="panel">
+    <strong>S2 positioning probe</strong> — emulates a GitHub wiki page (headings use <code>user-content-</code> ids + a GitHub-style scroll shim)
+    <div id="detect" class="note"></div>
+    <div id="active"></div>
+    <div class="grid"></div>
+    <div class="hint">Each link reloads with a unique <code>?r</code> so the directive re-fires — a same-document hash change would not. Target section: <code>StreamArray</code>, phrase <code>bounded</code>.</div>
+  </div>
+
+  <main>
+    <section>
+      <h2 id="user-content-pick">Pick — filtering by path</h2>
+      <p>Pick selects a sub-object out of a token stream by matching a filter against the current path, dropping everything else. It is part of the filters family.</p>
+    </section>
+    <section>
+      <h2 id="user-content-options">Parser — Options</h2>
+      <p>packValues, packKeys, and packStrings emit packed tokens; streamValues emits raw chunks. jsonStreaming enables parsing of multiple top-level JSON values separated by whitespace.</p>
+    </section>
+    <section>
+      <h2 id="user-content-streamarray">StreamArray — streaming array elements</h2>
+      <p>StreamArray assembles a top-level array one element at a time. It keeps memory bounded because only one element is held at a time, ideal for very large arrays that do not fit in memory.</p>
+    </section>
+    <section>
+      <h2 id="user-content-stringer">Stringer</h2>
+      <p>Stringer is the inverse of Parser: it consumes a token stream and produces JSON text, serializing a transformed stream without materializing the whole document.</p>
+    </section>
+    <section>
+      <h2 id="user-content-verifier">Verifier</h2>
+      <p>Verifier checks that an incoming stream is well-formed JSON and reports the byte offset, line, and column of the first error, passing data through unchanged on success.</p>
+    </section>
+  </main>
+
+  <script type="module" src="./positioning-test.js"></script>
+</body>
+</html>

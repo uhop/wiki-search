@@ -10,6 +10,18 @@
   <header>
     <input id="q" type="search" placeholder="Search…" autocomplete="off" autofocus
            aria-label="Search query" spellcheck="false">
+    <div class="settings">
+      <label>Open in
+        <select id="m-target">
+          <option value="new">new tab</option>
+          <option value="tab">reused tab</option>
+          <option value="opener">original tab</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="m-anchor" checked> <code>#anchor</code></label>
+      <label><input type="checkbox" id="m-text" checked> <code>:~:text=</code></label>
+      <span id="frag-support" class="frag"></span>
+    </div>
     <div id="status" class="status" role="status"></div>
   </header>
 
@@ -18,7 +30,8 @@
   <footer>
     <span id="engine"></span>
     <span class="grow"></span>
-    <a id="format-link" href="../spikes/s1/NOTES.md" target="_blank" rel="noopener">S1 spike</a>
+    <a href="../spikes/s1/NOTES.md" target="_blank" rel="noopener">S1</a>
+    <a href="../spikes/s2/NOTES.md" target="_blank" rel="noopener">S2</a>
   </footer>
 
   <script type="module" src="./app.js"></script>

@@ -1,14 +1,17 @@
-// app/app.js — the popup search app for the S1 spike.
+// app/app.js — the popup search app (S1 + S2 spikes).
 //
-// Path P thesis (what S1 proves): when this page is opened via a bookmarklet's
-// window.open() from a GitHub wiki page, it is a *new top-level browsing
-// context on its own origin*, so the wiki page's CSP does not govern it. It can
-// fetch an index (cross-origin under CORS, or same-origin) and run a search
-// engine freely — none of which is possible inline on the CSP-locked wiki page.
+// Path P thesis (S1): opened via a bookmarklet's window.open() from a GitHub
+// wiki page, this is a new top-level context on its own origin, so the wiki
+// page's CSP does not govern it. It fetches a self-describing, versioned index,
+// validates it (verify-or-explain — every failure produces a specific message,
+// never a blank box), searches, and renders results as real <a> links.
 //
-// It loads a self-describing, versioned index, validates it (verify-or-explain
-// — every failure produces a specific message, never a blank box), searches,
-// and renders results as real <a> links carrying Text Fragment directives.
+// Positioning (S2): result links carry Text Fragment directives
+// (`#anchor:~:text=phrase`). Three levers, exposed in the settings row so the
+// behaviour can be A/B'd on a real GitHub wiki page:
+//   - target: new tab | reused named tab | the original (opener) tab
+//   - #anchor on/off  (structural scroll fallback)
+//   - :~:text= on/off (native highlight; auto-off where unsupported)
 
 import { buildIndex, query, ENGINE_NAME } from '../engine/search.js';
 
@@ -21,10 +24,23 @@ const els = {
   status: document.getElementById('status'),
   results: document.getElementById('results'),
   engine: document.getElementById('engine'),
+  target: document.getElementById('m-target'),
+  anchor: document.getElementById('m-anchor'),
+  text: document.getElementById('m-text'),
+  fragSupport: document.getElementById('frag-support'),
 };
 
 let SITE = null;
 let HANDLE = null;
+
+// Does this browser consume Text Fragment directives? (Document.fragmentDirective)
+// Present in Chrome/Edge, Safari 18.2+, Firefox 131+. Detection ≈ support; the
+// S2 cross-browser checklist is authoritative, but this is enough to drive the
+// anchor-only fallback.
+const FRAGMENTS_SUPPORTED = 'fragmentDirective' in document;
+
+// S2 positioning levers. Defaults reproduce S1 (new tab, anchor + text directive).
+const MODES = { target: 'new', anchor: true, text: true };
 
 const setStatus = text => { els.status.className = 'status'; els.status.textContent = text; };
 const fail = text => { els.status.className = 'status error'; els.status.textContent = text; };
@@ -103,13 +119,15 @@ const loadIndex = async url => {
 // defensively so it is never mistaken for a prefix/suffix separator.
 const encodeTextDirective = s => encodeURIComponent(s).replace(/-/g, '%2D');
 
-// Build the result URL purely from the index's own metadata + a Text Fragment.
+// Build the result URL purely from the index's own metadata + the active levers.
 // No hardcoded github.com — a non-GitHub site just ships a different urlTemplate.
 const resultUrl = (doc, phrase) => {
   const base = SITE.urlTemplate.replace('{page}', encodeURIComponent(doc.page));
-  const anchor = doc.anchor ? String(doc.anchor) : '';
-  const wantText = SITE.fragments !== false && phrase;
-  const textDir = wantText ? `:~:text=${encodeTextDirective(phrase)}` : '';
+  const anchor = MODES.anchor && doc.anchor ? String(doc.anchor) : '';
+  // Drop the text directive when unsupported/disabled: in a non-consuming browser
+  // a trailing :~:text= would corrupt the #anchor and break the scroll fallback too.
+  const useText = MODES.text && FRAGMENTS_SUPPORTED && SITE.fragments !== false && phrase;
+  const textDir = useText ? `:~:text=${encodeTextDirective(phrase)}` : '';
   if (!anchor && !textDir) return base;
   return `${base}#${anchor}${textDir}`;
 };
@@ -125,12 +143,27 @@ const markSnippet = (node, snippet, phrase) => {
   );
 };
 
+// Wire the result link's navigation per the active target mode. Text fragments
+// require *user-initiated* navigation, so a real <a> click keeps them working
+// for new and reused tabs. 'opener' navigates the original wiki tab via script —
+// same tab, but the highlight is lost (the S2 trade-off, made visible).
+const applyTarget = a => {
+  if (MODES.target === 'opener' && window.opener) {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      window.opener.location.href = a.href;
+      try { window.opener.focus(); } catch {}
+    });
+    return;
+  }
+  a.target = MODES.target === 'tab' ? 'wiki-search-result' : '_blank';
+  a.rel = 'noopener';
+};
+
 const renderHit = ({ doc, phrase, snippet }) => {
-  const a = document.createElement('a');
-  a.className = 'hit';
+  const a = el('a', 'hit');
   a.href = resultUrl(doc, phrase);
-  a.target = '_blank';          // new tab: text fragments require user-initiated navigation,
-  a.rel = 'noopener';           // which a real <a> click (not JS location=) provides.
+  applyTarget(a);
 
   const title = el('div', 'title', doc.heading ? `${doc.title} › ${doc.heading}` : doc.title);
   const crumb = el('div', 'crumb', doc.page);
@@ -154,9 +187,46 @@ const run = () => {
   for (const hit of hits) els.results.append(renderHit(hit));
 };
 
+// Reflect text-fragment support + URL-param defaults into the settings row, and
+// rebuild result links whenever the user flips a lever.
+const wireSettings = params => {
+  MODES.target = params.get('target') || 'new';
+  MODES.anchor = params.get('anchor') !== 'off';
+  MODES.text = params.get('text') !== 'off';
+
+  // 'opener' is meaningless when the app wasn't opened by a bookmarklet.
+  if (MODES.target === 'opener' && !window.opener) MODES.target = 'new';
+
+  els.target.value = MODES.target;
+  els.anchor.checked = MODES.anchor;
+
+  if (FRAGMENTS_SUPPORTED) {
+    els.text.checked = MODES.text;
+    els.fragSupport.textContent = 'text fragments: supported';
+    els.fragSupport.className = 'frag';
+  } else {
+    MODES.text = false;
+    els.text.checked = false;
+    els.text.disabled = true;
+    els.fragSupport.textContent = 'text fragments: unsupported here — section-scroll only';
+    els.fragSupport.className = 'frag warn';
+  }
+
+  const sync = () => {
+    MODES.target = els.target.value;
+    MODES.anchor = els.anchor.checked;
+    MODES.text = els.text.checked && FRAGMENTS_SUPPORTED;
+    run();
+  };
+  els.target.addEventListener('change', sync);
+  els.anchor.addEventListener('change', sync);
+  els.text.addEventListener('change', sync);
+};
+
 const main = async () => {
   els.engine.textContent = ENGINE_NAME;
   const params = new URLSearchParams(location.search);
+  wireSettings(params);
 
   const { url, note } = resolveIndexUrl(params);
   setStatus(note ? note + ' — loading index…' : 'Loading index…');
