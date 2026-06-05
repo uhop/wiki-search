@@ -28,6 +28,8 @@ export const toPlainText = md =>
   md
     .replace(/^[ \t]*(```|~~~).*$/gm, ' ') // fence delimiters (keep the code text)
     .replace(/`([^`]*)`/g, '$1')           // inline code → its text
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$1') // [[Display|Page]] wiki link → Display
+    .replace(/\[\[([^\]]+)\]\]/g, '$1')    // [[Page]] wiki link → Page
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // image → alt
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')  // link → text
     .replace(/<[^>]+>/g, ' ')              // strip HTML tags

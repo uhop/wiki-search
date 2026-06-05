@@ -37,9 +37,14 @@ assert.ok(!anchors.includes('this'), 'code-fence # ignored');
 // Punctuation drops from slugs: "Pick: by path" → pick-by-path.
 assert.ok(byPage.Filters.some(d => d.anchor === 'pick-by-path'), 'colon dropped from slug');
 
-// Plain text is stripped of markdown link syntax.
+// A removed char between spaces yields a double hyphen, matching github-slugger:
+// "Replace — in place" → replace--in-place.
+assert.ok(byPage.Filters.some(d => d.anchor === 'replace--in-place'), 'em-dash → double hyphen');
+
+// Plain text is stripped of markdown + wiki link syntax.
 const pick = byPage.Filters.find(d => d.anchor === 'pick-by-path');
-assert.ok(/\bfilter\b/.test(pick.text) && !/\]\(/.test(pick.text), 'link reduced to its text');
+assert.ok(/\bfilter\b/.test(pick.text) && !/\]\(/.test(pick.text), 'markdown link reduced to its text');
+assert.ok(/\bParser\b/.test(pick.text) && /\bthe parser options\b/.test(pick.text) && !/\[\[/.test(pick.text), 'wiki links reduced to display text');
 
 // Ids are sequential and the build is deterministic.
 assert.deepEqual(index.docs.map(d => d.id), index.docs.map((_, i) => i), 'sequential ids');
