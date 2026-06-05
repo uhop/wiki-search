@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>wiki-search</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <input id="q" type="search" placeholder="Search…" autocomplete="off" autofocus
+           aria-label="Search query" spellcheck="false">
+    <div id="status" class="status" role="status"></div>
+  </header>
+
+  <main id="results" aria-live="polite"></main>
+
+  <footer>
+    <span id="engine"></span>
+    <span class="grow"></span>
+    <a id="format-link" href="../spikes/s1/NOTES.md" target="_blank" rel="noopener">S1 spike</a>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+node_modules/
+bookmarklet/dist/
+.DS_Store
+*.log

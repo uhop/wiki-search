@@ -1,0 +1,98 @@
+{
+  "v": 1,
+  "site": {
+    "name": "stream-json wiki",
+    "urlTemplate": "https://github.com/uhop/stream-json/wiki/{page}",
+    "fragments": true
+  },
+  "docs": [
+    {
+      "id": 0,
+      "page": "Parser",
+      "title": "Parser",
+      "heading": "Overview",
+      "anchor": "overview",
+      "text": "Parser is the core component of stream-json. It reads a stream of bytes or text and emits a stream of JSON tokens such as startObject, endObject, startArray, endArray, startKey, endKey, keyValue, startString, endString, stringValue, startNumber, numberValue, nullValue, trueValue, and falseValue. Downstream components assemble these tokens back into JavaScript values or transform them."
+    },
+    {
+      "id": 1,
+      "page": "Parser",
+      "title": "Parser",
+      "heading": "Options",
+      "anchor": "options",
+      "text": "Parser accepts options that control how primitive values are reported. packValues, packKeys, and packStrings collect the pieces of a value and emit a single packed token. streamValues, streamKeys, and streamStrings emit the raw chunks as they arrive for low-memory processing. jsonStreaming enables parsing of multiple top-level JSON values separated by whitespace, which is essential for JSON streaming and newline-delimited JSON."
+    },
+    {
+      "id": 2,
+      "page": "Pick",
+      "title": "Pick",
+      "heading": "Filtering by path",
+      "anchor": "filtering-by-path",
+      "text": "Pick selects a sub-object or sub-array out of a token stream by matching a filter against the current path. Use pick({ filter: 'data' }) to keep only the value under the data key and drop everything else. The filter can be a string, a regular expression, or a function receiving the stack and the current token. Pick is part of the filters family alongside Replace, Ignore, and Filter."
+    },
+    {
+      "id": 3,
+      "page": "Replace",
+      "title": "Replace",
+      "heading": "Replacing matched values",
+      "anchor": "replacing-matched-values",
+      "text": "Replace substitutes values whose path matches a filter with a replacement token stream or a constant. It is useful for redacting sensitive fields or trimming large sub-trees while keeping the surrounding structure intact. Like the other filters it takes a filter option and supports a replacement callback."
+    },
+    {
+      "id": 4,
+      "page": "StreamArray",
+      "title": "StreamArray",
+      "heading": "Streaming array elements",
+      "anchor": "streaming-array-elements",
+      "text": "StreamArray assembles a top-level JSON array one element at a time and emits each element as an object with a key (the numeric index) and a value (the assembled JavaScript value). It keeps memory bounded because only one element is held at a time, making it ideal for processing very large arrays that do not fit in memory."
+    },
+    {
+      "id": 5,
+      "page": "StreamObject",
+      "title": "StreamObject",
+      "heading": "Streaming object properties",
+      "anchor": "streaming-object-properties",
+      "text": "StreamObject assembles a top-level JSON object and emits each property as an object with a key (the property name) and a value (the assembled JavaScript value). Use it when the top-level container is an object rather than an array and you want to handle properties one by one."
+    },
+    {
+      "id": 6,
+      "page": "StreamValues",
+      "title": "StreamValues",
+      "heading": "Multiple top-level values",
+      "anchor": "multiple-top-level-values",
+      "text": "StreamValues assembles a sequence of separate top-level JSON values, such as newline-delimited JSON or whitespace-separated documents. Combine it with the parser's jsonStreaming option. Each assembled value is emitted with an incrementing key and its value, so a log file of JSON records can be consumed record by record."
+    },
+    {
+      "id": 7,
+      "page": "Stringer",
+      "title": "Stringer",
+      "heading": "Tokens back to JSON text",
+      "anchor": "tokens-back-to-json-text",
+      "text": "Stringer is the inverse of Parser: it consumes a token stream and produces JSON text. Place it at the end of a pipeline after filters or replacers to serialize the transformed token stream back into a JSON string or file without ever materializing the whole document in memory."
+    },
+    {
+      "id": 8,
+      "page": "Utilities",
+      "title": "Utilities",
+      "heading": "Batch",
+      "anchor": "batch",
+      "text": "Batch groups incoming items into arrays of a fixed size so downstream consumers can process them in chunks, which reduces per-item overhead when writing to a database or calling an API. Pair it with StreamArray to turn a stream of elements into a stream of batches."
+    },
+    {
+      "id": 9,
+      "page": "Utilities",
+      "title": "Utilities",
+      "heading": "Verifier",
+      "anchor": "verifier",
+      "text": "Verifier checks that an incoming stream is well-formed JSON and reports the byte offset, line, and column of the first error. It passes data through unchanged on success, so it can sit at the head of a pipeline to validate untrusted input before expensive processing."
+    },
+    {
+      "id": 10,
+      "page": "Home",
+      "title": "stream-json",
+      "heading": "Building a pipeline",
+      "anchor": "building-a-pipeline",
+      "text": "stream-json components are composed with stream-chain's chain() helper into a pipeline. A typical pipeline pairs a Parser with an assembler such as StreamArray, optionally inserting filters like Pick or Replace in between, and applies back-pressure end to end so that arbitrarily large JSON can be processed with bounded memory."
+    }
+  ]
+}
