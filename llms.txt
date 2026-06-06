@@ -1,0 +1,73 @@
+# wiki-search-index
+
+> CLI that builds a self-describing search index from a GitHub wiki (or any Markdown docs). It's the indexer for `wiki-search` — a bookmarklet + hosted app that search a wiki and jump to the matching section. Zero dependencies, no build step.
+
+## Install
+
+```bash
+npx wiki-search-index --wiki ./wiki   # no install needed
+# or, as a dev dependency:
+npm i -D wiki-search-index
+```
+
+## Quick start
+
+```bash
+# Build an index for a GitHub wiki checked out at ./wiki
+npx wiki-search-index --wiki ./wiki
+# → ./wiki/search-index.json
+```
+
+Commit `search-index.json` into the wiki (it's served from `raw.githubusercontent.com`), then point the hosted app at it: `https://uhop.github.io/wiki-search/app/?wiki=<owner>/<repo>`.
+
+## CLI
+
+`wiki-search-index [options]`
+
+- `--wiki <dir>` — Markdown source directory (default `./wiki`).
+- `--out <path>` — output file (default `<wiki>/search-index.json`).
+- `--repo <owner/repo>` — GitHub repo; builds the wiki URL template. Needed when the wiki's git origin lacks the `.wiki.git` suffix the tool infers from.
+- `--url-template <tpl>` — result-URL template containing `{page}` (for any non-GitHub site).
+- `--name <site name>` — human label shown in the search UI.
+- `--stdout` — write the index to stdout instead of a file.
+
+With neither `--url-template` nor `--repo`, owner/repo is inferred from the wiki dir's git origin (`…/<owner>/<repo>.wiki.git`). Exit code `2` if neither is given and inference fails.
+
+## Output — index format v1
+
+A single self-describing JSON document (full spec: INDEX-FORMAT.md):
+
+```json
+{
+  "v": 1,
+  "site": { "name": "...", "urlTemplate": "https://github.com/<o>/<r>/wiki/{page}", "fragments": true },
+  "docs": [
+    { "id": 0, "page": "Page-Name", "title": "Page title", "heading": "Section", "anchor": "section", "text": "plain text…" }
+  ]
+}
+```
+
+A client validates `v` + required fields, then builds each result URL from `site.urlTemplate` alone — no hardcoded host, so any site emitting this shape is searchable. The output is deterministic (sorted, no timestamps), so a CI `git diff --exit-code` can gate index staleness.
+
+## Common patterns
+
+```bash
+# Explicit repo (origin lacks the .wiki.git suffix)
+npx wiki-search-index --wiki ./wiki --repo uhop/stream-json
+
+# Non-GitHub docs site
+npx wiki-search-index --wiki ./docs --url-template 'https://example.com/docs/{page}' --name 'Example docs'
+
+# Pipe the index elsewhere
+npx wiki-search-index --wiki ./wiki --stdout > index.json
+```
+
+Rebuild whenever the wiki's Markdown changes — an index does not go stale on its own.
+
+## Links
+
+- Demo + install: https://uhop.github.io/wiki-search/
+- Wiki: https://github.com/uhop/wiki-search/wiki
+- npm: https://www.npmjs.com/package/wiki-search-index
+- Index format: https://github.com/uhop/wiki-search/blob/main/INDEX-FORMAT.md
+- Full LLM reference: https://github.com/uhop/wiki-search/blob/main/llms-full.txt

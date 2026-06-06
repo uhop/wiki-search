@@ -13,7 +13,9 @@
     "builder/wiki-index.mjs",
     "builder/lib",
     "builder/README.md",
-    "INDEX-FORMAT.md"
+    "INDEX-FORMAT.md",
+    "llms.txt",
+    "llms-full.txt"
   ],
   "engines": {
     "node": ">=22"
@@ -29,6 +31,8 @@
     "static-search"
   ],
   "homepage": "https://uhop.github.io/wiki-search/",
+  "llms": "https://raw.githubusercontent.com/uhop/wiki-search/main/llms.txt",
+  "llmsFull": "https://raw.githubusercontent.com/uhop/wiki-search/main/llms-full.txt",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/uhop/wiki-search.git"

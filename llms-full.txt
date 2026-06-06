@@ -1,0 +1,156 @@
+# wiki-search — full LLM reference
+
+`wiki-search` adds real search to a GitHub wiki (or any Markdown docs site) and jumps the reader to the matching section, without moving the docs. It has two parts:
+
+1. **`wiki-search-index`** — the npm CLI (this package) that compiles Markdown into a self-describing JSON search index.
+2. **The hosted search app** — a static GitHub Pages site that loads an index, searches it, and deep-links each hit via Text Fragments. A thin bookmarklet opens it on any wiki page.
+
+Zero runtime dependencies. No build step — the CLI is `.mjs`, the app is browser ESM.
+
+---
+
+## 1. The CLI — `wiki-search-index`
+
+`bin`: `wiki-search-index` → `builder/wiki-index.mjs`.
+
+```
+wiki-search-index [options]
+```
+
+### Options
+
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `--wiki <dir>` | `./wiki` | Markdown source directory. |
+| `--out <path>` | `<wiki>/search-index.json` | Output file. |
+| `--repo <owner/repo>` | — | GitHub repo; builds the wiki URL template `https://github.com/<owner>/<repo>/wiki/{page}`. |
+| `--url-template <tpl>` | — | Result-URL template; **must contain `{page}`**. For any non-GitHub site. |
+| `--name <site name>` | `<repo> wiki` or `wiki` | Human label shown in the search UI. |
+| `--stdout` | off | Write the index to stdout instead of a file. |
+
+Flags accept both `--key value` and `--key=value`. `--stdout` is a valueless boolean.
+
+### Repo inference
+
+With neither `--url-template` nor `--repo`, the tool reads the wiki dir's git origin (`git -C <wiki> remote get-url origin`) and extracts `owner/repo`, tolerating the `…/<owner>/<repo>.wiki.git` suffix. If it can't determine a URL template (no `--url-template`, no `--repo`, and inference fails), it prints an error and exits `2`.
+
+### Output
+
+On success it writes pretty-printed JSON (2-space indent, trailing newline) and logs to **stderr** a one-line summary: `wiki-index: <N> sections from <P> page(s) → <out>` plus the site name and URL template. With `--stdout` the JSON goes to stdout and nothing else is written.
+
+### Examples
+
+```bash
+# GitHub wiki — owner/repo inferred from the wiki's git origin
+npx wiki-search-index --wiki ./wiki
+
+# Explicit repo (origin lacks the .wiki.git suffix, e.g. an SSH submodule)
+npx wiki-search-index --wiki ./wiki --repo uhop/stream-json
+
+# Non-GitHub docs site
+npx wiki-search-index --wiki ./docs --url-template 'https://example.com/docs/{page}' --name 'Example docs'
+
+# Emit to stdout
+npx wiki-search-index --wiki ./wiki --stdout > index.json
+```
+
+---
+
+## 2. Index format (v1)
+
+A wiki-search index is a single self-describing JSON document (canonical spec: `INDEX-FORMAT.md`). A client assumes nothing beyond this contract.
+
+```json
+{
+  "v": 1,
+  "site": {
+    "name": "wiki-search wiki",
+    "urlTemplate": "https://github.com/uhop/wiki-search/wiki/{page}",
+    "fragments": true
+  },
+  "docs": [
+    {
+      "id": 0,
+      "page": "Index-Format",
+      "title": "Index format",
+      "heading": "Validation",
+      "anchor": "validation",
+      "text": "full plain text of the section…"
+    }
+  ]
+}
+```
+
+### Fields
+
+- `v` — format version (`1`). Clients reject a version they don't understand.
+- `site.name` — human label for the corpus.
+- `site.urlTemplate` — result-URL template; **must contain `{page}`**. No hardcoded host.
+- `site.fragments` — `true` if the target renders Text Fragments; when `false`, clients omit the `:~:text=` directive.
+- `docs[]` — one entry per indexed section.
+- `doc.id` — stable integer, sequential in build order.
+- `doc.page` — the `{page}` substitution (for GitHub wikis, the page's URL segment, e.g. `Foo-Bar`).
+- `doc.title` — page display title.
+- `doc.heading` — section heading (falls back to the page title for a page's preamble).
+- `doc.anchor` — in-page anchor slug; `""` means the page top.
+- `doc.text` — plain-text body of the section (Markdown stripped), for the search engine.
+
+### Building a result URL
+
+```
+base = urlTemplate.replace("{page}", encodeURIComponent(doc.page))
+hash = doc.anchor || ""                       (omit if empty)
+text = ":~:text=" + <matched phrase>          (only if site.fragments and a phrase)
+result = base + ("#" + hash + text)           (only if hash or text)
+```
+
+### Validation (verify-or-explain)
+
+A client must check, and on any failure show a specific message (never a blank box): (1) the index is fetchable; (2) it is valid JSON; (3) `v` is supported; (4) `site.urlTemplate` is present and contains `{page}`; (5) `docs` is a non-empty array, each entry having `page`, `title`, `text`.
+
+### Versioning
+
+`v` increases only on a breaking change. Additive optional fields do not bump `v`; clients ignore unknown fields. A client meeting a higher `v` than it knows stops and says so.
+
+---
+
+## 3. The hosted app
+
+Static site at `https://uhop.github.io/wiki-search/app/`. It loads an index, searches, and renders hits as real `<a>` links with `#anchor:~:text=phrase` directives. Query parameters (priority order):
+
+- `?index=<url>` — load any v1 index from any URL.
+- `?wiki=<owner>/<repo>` — convenience: derive `https://raw.githubusercontent.com/wiki/<owner>/<repo>/search-index.json` (override the file with `?file=<name>`).
+- `?from=<page url>` — the current page URL, passed by the bookmarklet; the app parses `owner/repo` from it (`github.com/<owner>/<repo>/wiki`).
+- `?q=<query>` — pre-fill the search box.
+- `?target=opener|new|tab`, `?anchor=off`, `?text=off` — positioning levers (also in the Options row).
+
+With none of `?index` / `?wiki` / `?from` resolvable, the app explains ("nothing to search yet") rather than showing a blank box.
+
+### The bookmarklet
+
+`bookmarklet/bookmarklet.js` exports `APP_URL` and `BOOKMARKLET`. The bookmarklet is a thin launcher — `window.open(APP_URL + '?from=' + encodeURIComponent(location.href), …)` — so it opens the app on its own origin (bypassing the wiki page's CSP) and lets the app do owner/repo detection. Only `APP_URL` is frozen into a saved bookmark; everything else is server-side and updates on redeploy.
+
+---
+
+## 4. Adoption recipe
+
+```bash
+# 1. Build the index from your wiki's Markdown
+npx wiki-search-index --wiki ./wiki              # (--repo owner/repo if the origin lacks .wiki.git)
+# 2. Commit ./wiki/search-index.json into the wiki repo
+# 3. Link the hosted app from the wiki (Home / sidebar):
+#    https://uhop.github.io/wiki-search/app/?wiki=<owner>/<repo>
+#    plus the one-click bookmarklet from https://uhop.github.io/wiki-search/
+```
+
+Rebuild the index whenever the wiki's Markdown changes (the output is deterministic, so a CI `git diff --exit-code` can gate staleness).
+
+---
+
+## Links
+
+- Demo + install: https://uhop.github.io/wiki-search/
+- Wiki: https://github.com/uhop/wiki-search/wiki
+- Source: https://github.com/uhop/wiki-search
+- npm: https://www.npmjs.com/package/wiki-search-index
+- Index format: https://github.com/uhop/wiki-search/blob/main/INDEX-FORMAT.md
