@@ -54,6 +54,7 @@ Run locally: `python3 -m http.server` from the repo root, then open
 
 ## Release notes
 
+- 0.1.2 _Fix: the published CLI was missing its execute bit, so `npx wiki-search-index` failed — now runnable._
 - 0.1.1 _HTML entities (`&mdash;`, `&#1234;`, …) are decoded so they no longer pollute the index._
 - 0.1.0 _Initial release of the `wiki-search-index` builder._
 

@@ -1,6 +1,6 @@
 {
   "name": "wiki-search-index",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Build a self-describing search index from a GitHub wiki (or any Markdown docs) — the indexer for wiki-search.",
   "type": "module",
   "bin": {
