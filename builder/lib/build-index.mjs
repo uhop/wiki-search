@@ -7,16 +7,18 @@
 
 import {readdir, readFile} from 'node:fs/promises';
 import {join} from 'node:path';
-import {splitSections} from './markdown.mjs';
+import {splitSections, decodeEntities} from './markdown.mjs';
 import {createSlugger} from './slug.mjs';
 
 // GitHub stores page "Foo Bar" as Foo-Bar.md and special pages (_Sidebar,
 // _Footer, …) start with an underscore — those are chrome, not content.
 const isContentPage = name => name.endsWith('.md') && !name.startsWith('_');
 
+// Entity-decoded so a title carrying e.g. &amp; displays the glyph, matching
+// splitSections' headings (see decodeEntities).
 const firstH1 = md => {
   const m = /^#\s+(.+?)\s*#*\s*$/m.exec(md);
-  return m ? m[1].trim() : null;
+  return m ? decodeEntities(m[1]).trim() : null;
 };
 
 export const buildIndex = async ({wikiDir, urlTemplate, siteName, fragments = true}) => {

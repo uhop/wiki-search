@@ -7,14 +7,16 @@ const ATX = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 
 // Split markdown into sections. Text before the first heading becomes a
 // preamble section with heading=null, level=0. `#` inside fenced code is
-// ignored so code comments don't masquerade as headings.
+// ignored so code comments don't masquerade as headings. Headings are
+// entity-decoded so the display text and the derived slug match GitHub, which
+// renders entities before slugging (see decodeEntities).
 export const splitSections = md => {
   const sections = [{level: 0, heading: null, lines: []}];
   let inFence = false;
   for (const line of md.split(/\r?\n/)) {
     if (FENCE.test(line)) inFence = !inFence;
     const m = inFence ? null : ATX.exec(line);
-    if (m) sections.push({level: m[1].length, heading: m[2].trim(), lines: []});
+    if (m) sections.push({level: m[1].length, heading: decodeEntities(m[2]).trim(), lines: []});
     else sections.at(-1).lines.push(line);
   }
   return sections
@@ -80,6 +82,14 @@ const decodeEntity = (_m, body) => {
     body[1] === 'x' || body[1] === 'X' ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
   return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : ' ';
 };
+
+// Resolve every HTML entity in a string to its character. Shared by toPlainText
+// (the term index) and the heading path (display text + slug). GitHub renders a
+// heading's entities to glyphs before slugging, so "4.2.2 &mdash; 2026-05-29"
+// must decode to "4.2.2 — 2026-05-29" first — then the slugger drops the em dash
+// and the two flanking spaces collapse to "--" (#422--2026-05-29), exactly as
+// GitHub does. Slugging the raw "&mdash;" instead leaks the junk token "mdash".
+export const decodeEntities = s => s.replace(ENTITY_RE, decodeEntity);
 
 // Reduce Markdown to plain, collapsed text. Code *text* is kept (API names are
 // worth searching) — only the fence delimiters are removed.

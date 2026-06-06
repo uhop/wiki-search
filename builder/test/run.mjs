@@ -55,6 +55,19 @@ assert.ok(
   'em-dash → double hyphen'
 );
 
+// A heading written with the &mdash; ENTITY must slug like GitHub: the entity is
+// decoded to — before slugging (verified live: GitHub emits #422--2026-05-29 for
+// "## 4.2.2 &mdash; 2026-05-29"), not the junk slug 422-mdash-2026-05-29.
+const entityHeading = byPage.Filters.find(d => d.anchor === '422--2026-05-29');
+assert.ok(entityHeading, 'entity heading slugs like GitHub (422--2026-05-29)');
+assert.ok(
+  !byPage.Filters.some(d => d.anchor === '422-mdash-2026-05-29'),
+  'entity name does not leak into the slug'
+);
+// The stored display heading is the decoded glyph, not the literal "&mdash;".
+assert.equal(entityHeading.heading, '4.2.2 — 2026-05-29', 'heading display text is decoded');
+assert.ok(!/&mdash;/.test(entityHeading.heading), 'no literal entity in heading text');
+
 // Plain text is stripped of markdown + wiki link syntax.
 const pick = byPage.Filters.find(d => d.anchor === 'pick-by-path');
 assert.ok(
