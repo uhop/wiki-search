@@ -322,23 +322,13 @@ const wirePopupDismissal = () => {
   });
 };
 
-// Standalone (not a popup): pitch the bookmarklet above the search box as a real
-// draggable javascript: link. Hidden when launched via the bookmarklet (you
-// already have it).
+// Standalone (not a popup): reveal the bookmarklet pitch (static markup in
+// index.html) and point its draggable link at the single-source bookmarklet.
+// Hidden when launched via the bookmarklet — you already have it.
 const setupPromo = () => {
   if (window.opener || !els.promo) return;
-  const bm = el('a', 'bm', '🔍 Wiki Search');
-  bm.href = BOOKMARKLET;
-  bm.title = 'Drag me to your bookmarks bar (clicking here does nothing)';
-  bm.draggable = true;
-  const how = el('a', 'how', 'How to install ›');
-  how.href = '../'; // the landing / install page at the Pages root
-  els.promo.append(
-    el('span', null, '🔖 Search wikis in place — drag '),
-    bm,
-    el('span', null, ' to your bookmarks bar. '),
-    how
-  );
+  const bm = els.promo.querySelector('.bm');
+  if (bm) bm.href = BOOKMARKLET;
   els.promo.hidden = false;
 };
 
