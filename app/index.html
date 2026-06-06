@@ -1,42 +1,50 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>wiki-search</title>
-  <link rel="stylesheet" href="./style.css">
-</head>
-<body>
-  <header>
-    <div id="promo" class="promo" hidden></div>
-    <input id="q" type="search" placeholder="Search…" autocomplete="off" autofocus
-           aria-label="Search query" spellcheck="false">
-    <details class="settings">
-      <summary>Options</summary>
-      <div class="opts">
-        <label>Open results in
-          <select id="m-target">
-            <option value="opener">this tab (in place)</option>
-            <option value="new">new tab (highlight)</option>
-            <option value="tab">reused tab</option>
-          </select>
-        </label>
-        <label><input type="checkbox" id="m-anchor" checked> <code>#anchor</code></label>
-        <label><input type="checkbox" id="m-text" checked> <code>:~:text=</code></label>
-        <span id="frag-support" class="frag"></span>
-      </div>
-    </details>
-    <div id="status" class="status" role="status"></div>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wiki-search</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <div id="promo" class="promo" hidden></div>
+      <input
+        id="q"
+        type="search"
+        placeholder="Search…"
+        autocomplete="off"
+        autofocus
+        aria-label="Search query"
+        spellcheck="false"
+      />
+      <details class="settings">
+        <summary>Options</summary>
+        <div class="opts">
+          <label
+            >Open results in
+            <select id="m-target">
+              <option value="opener">this tab (in place)</option>
+              <option value="new">new tab (highlight)</option>
+              <option value="tab">reused tab</option>
+            </select>
+          </label>
+          <label><input type="checkbox" id="m-anchor" checked /> <code>#anchor</code></label>
+          <label><input type="checkbox" id="m-text" checked /> <code>:~:text=</code></label>
+          <span id="frag-support" class="frag"></span>
+        </div>
+      </details>
+      <div id="status" class="status" role="status"></div>
+    </header>
 
-  <main id="results" aria-live="polite"></main>
+    <main id="results" aria-live="polite"></main>
 
-  <footer>
-    <span id="engine"></span>
-    <span class="grow"></span>
-    <a href="../" target="_blank" rel="noopener">About &amp; install</a>
-  </footer>
+    <footer>
+      <span id="engine"></span>
+      <span class="grow"></span>
+      <a href="../" target="_blank" rel="noopener">About &amp; install</a>
+    </footer>
 
-  <script type="module" src="./app.js"></script>
-</body>
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>

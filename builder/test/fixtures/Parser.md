@@ -10,7 +10,7 @@ The Parser turns a byte stream into JSON tokens. This text sits under the H1.
 
 ```js
 // This # is inside a code fence and must NOT be treated as a heading.
-const p = parser({ jsonStreaming: true });
+const p = parser({jsonStreaming: true});
 ```
 
 ## Options

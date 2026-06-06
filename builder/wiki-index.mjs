@@ -9,11 +9,11 @@
 // dir's git origin (…/<owner>/<repo>.wiki.git) and builds the GitHub template.
 // Default --out is <wiki>/search-index.json (the index is hosted from the wiki).
 
-import { writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { buildIndex } from './lib/build-index.mjs';
+import {writeFile} from 'node:fs/promises';
+import {join, resolve} from 'node:path';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {buildIndex} from './lib/build-index.mjs';
 
 const run = promisify(execFile);
 
@@ -27,9 +27,13 @@ const parseArgs = argv => {
     const m = /^--([^=]+)(?:=(.*))?$/.exec(argv[i]);
     if (!m) continue;
     const key = m[1];
-    if (m[2] !== undefined) { args[key] = m[2]; continue; }
+    if (m[2] !== undefined) {
+      args[key] = m[2];
+      continue;
+    }
     const next = argv[i + 1];
-    if (!BOOLEAN_FLAGS.has(key) && next !== undefined && !next.startsWith('--')) args[key] = argv[++i];
+    if (!BOOLEAN_FLAGS.has(key) && next !== undefined && !next.startsWith('--'))
+      args[key] = argv[++i];
     else args[key] = true;
   }
   return args;
@@ -38,7 +42,7 @@ const parseArgs = argv => {
 // owner/repo from the wiki clone's origin, tolerating the …/.wiki.git suffix.
 const inferRepo = async wikiDir => {
   try {
-    const { stdout } = await run('git', ['-C', wikiDir, 'remote', 'get-url', 'origin']);
+    const {stdout} = await run('git', ['-C', wikiDir, 'remote', 'get-url', 'origin']);
     const m = /[/:]([^/]+)\/([^/]+?)(?:\.wiki)?\.git$/.exec(stdout.trim());
     return m ? `${m[1]}/${m[2]}` : null;
   } catch {
@@ -55,15 +59,20 @@ const main = async () => {
 
   const urlTemplate = args['url-template'] || (repo && `https://github.com/${repo}/wiki/{page}`);
   if (!urlTemplate) {
-    console.error('wiki-index: need --url-template or --repo owner/repo (could not infer from git origin).');
+    console.error(
+      'wiki-index: need --url-template or --repo owner/repo (could not infer from git origin).'
+    );
     process.exit(2);
   }
   const siteName = args.name || (repo ? `${repo.split('/')[1]} wiki` : 'wiki');
 
-  const index = await buildIndex({ wikiDir, urlTemplate, siteName });
+  const index = await buildIndex({wikiDir, urlTemplate, siteName});
   const json = JSON.stringify(index, null, 2) + '\n';
 
-  if (args.stdout) { process.stdout.write(json); return; }
+  if (args.stdout) {
+    process.stdout.write(json);
+    return;
+  }
 
   const out = resolve(args.out || join(wikiDir, 'search-index.json'));
   await writeFile(out, json);

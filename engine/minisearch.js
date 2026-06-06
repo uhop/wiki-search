@@ -7,28 +7,31 @@
 // the shared engine/phrase.js.
 
 import MiniSearch from './vendor/minisearch.mjs';
-import { pickPhrase, snippetAround } from './phrase.js';
+import {pickPhrase, snippetAround} from './phrase.js';
 
 export const ENGINE_NAME = 'minisearch';
 
 export const buildIndex = docs => {
   const ms = new MiniSearch({
-    fields: ['title', 'heading', 'text'],                        // searched
+    fields: ['title', 'heading', 'text'], // searched
     storeFields: ['page', 'title', 'heading', 'anchor', 'text'], // returned
-    searchOptions: { boost: { title: 3, heading: 2 }, prefix: true, fuzzy: 0.2 },
+    searchOptions: {boost: {title: 3, heading: 2}, prefix: true, fuzzy: 0.2}
   });
   ms.addAll(docs);
   return ms;
 };
 
-export const query = (ms, q, { limit = 20 } = {}) =>
-  ms.search(q).slice(0, limit).map(h => {
-    const text = h.text || '';
-    const phrase = pickPhrase(text, q, h.heading);
-    return {
-      doc: { id: h.id, page: h.page, title: h.title, heading: h.heading, anchor: h.anchor, text },
-      score: h.score,
-      phrase,
-      snippet: snippetAround(text, phrase),
-    };
-  });
+export const query = (ms, q, {limit = 20} = {}) =>
+  ms
+    .search(q)
+    .slice(0, limit)
+    .map(h => {
+      const text = h.text || '';
+      const phrase = pickPhrase(text, q, h.heading);
+      return {
+        doc: {id: h.id, page: h.page, title: h.title, heading: h.heading, anchor: h.anchor, text},
+        score: h.score,
+        phrase,
+        snippet: snippetAround(text, phrase)
+      };
+    });

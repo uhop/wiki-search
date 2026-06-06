@@ -28,19 +28,19 @@ that emits this shape is searchable — wiki-search is not GitHub-specific.
 
 ## Fields
 
-| Field | Meaning |
-|-------|---------|
-| `v` | Format version. This document is `1`. Clients reject versions they don't understand. |
-| `site.name` | Human label for the corpus (shown in the UI). |
-| `site.urlTemplate` | Result-URL template; **must contain `{page}`**. No hardcoded host. |
-| `site.fragments` | `true` if the target renders [Text Fragments](https://developer.mozilla.org/docs/Web/Text_fragments). When `false`, clients omit the `:~:text=` directive. |
-| `docs[]` | One entry per indexed section. |
-| `doc.id` | Stable integer, sequential in build order. |
-| `doc.page` | The `{page}` substitution — for GitHub wikis, the page's URL segment (`Foo-Bar`). |
-| `doc.title` | Page display title. |
-| `doc.heading` | Section heading (falls back to the page title for a page's preamble). |
-| `doc.anchor` | In-page anchor slug; `""` means the page top. For GitHub, the heading's slug. |
-| `doc.text` | Plain-text body of the section (markdown stripped), for the search engine. |
+| Field              | Meaning                                                                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v`                | Format version. This document is `1`. Clients reject versions they don't understand.                                                                       |
+| `site.name`        | Human label for the corpus (shown in the UI).                                                                                                              |
+| `site.urlTemplate` | Result-URL template; **must contain `{page}`**. No hardcoded host.                                                                                         |
+| `site.fragments`   | `true` if the target renders [Text Fragments](https://developer.mozilla.org/docs/Web/Text_fragments). When `false`, clients omit the `:~:text=` directive. |
+| `docs[]`           | One entry per indexed section.                                                                                                                             |
+| `doc.id`           | Stable integer, sequential in build order.                                                                                                                 |
+| `doc.page`         | The `{page}` substitution — for GitHub wikis, the page's URL segment (`Foo-Bar`).                                                                          |
+| `doc.title`        | Page display title.                                                                                                                                        |
+| `doc.heading`      | Section heading (falls back to the page title for a page's preamble).                                                                                      |
+| `doc.anchor`       | In-page anchor slug; `""` means the page top. For GitHub, the heading's slug.                                                                              |
+| `doc.text`         | Plain-text body of the section (markdown stripped), for the search engine.                                                                                 |
 
 ## Building a result URL
 

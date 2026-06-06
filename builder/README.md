@@ -13,14 +13,14 @@ node builder/wiki-index.mjs --wiki ./wiki --stdout        # print instead of wri
 node builder/wiki-index.mjs --wiki ./docs --url-template 'https://example.com/d/{page}' --name 'Example docs'
 ```
 
-| Flag | Default | Meaning |
-|------|---------|---------|
-| `--wiki <dir>` | `./wiki` | Markdown source directory. |
-| `--out <path>` | `<wiki>/search-index.json` | Where to write. |
-| `--stdout` | — | Print the index instead of writing a file. |
-| `--url-template <tpl>` | inferred | Result-URL template; must contain `{page}`. |
-| `--repo <owner/repo>` | inferred | Build the GitHub template from this. |
-| `--name <str>` | `<repo> wiki` | `site.name`. |
+| Flag                   | Default                    | Meaning                                     |
+| ---------------------- | -------------------------- | ------------------------------------------- |
+| `--wiki <dir>`         | `./wiki`                   | Markdown source directory.                  |
+| `--out <path>`         | `<wiki>/search-index.json` | Where to write.                             |
+| `--stdout`             | —                          | Print the index instead of writing a file.  |
+| `--url-template <tpl>` | inferred                   | Result-URL template; must contain `{page}`. |
+| `--repo <owner/repo>`  | inferred                   | Build the GitHub template from this.        |
+| `--name <str>`         | `<repo> wiki`              | `site.name`.                                |
 
 What it does: one section per ATX heading (plus a page-top preamble section),
 GitHub-style heading anchors with `-1`/`-2` disambiguation, `#`-in-code-fence

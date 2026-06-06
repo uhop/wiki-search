@@ -28,8 +28,8 @@
 // on ~/Open/page-dom-stats. The last query is persisted so an accidental blur
 // doesn't lose your search.
 
-import { buildIndex, query, ENGINE_NAME } from '../engine/minisearch.js';
-import { BOOKMARKLET } from '../bookmarklet/bookmarklet.js';
+import {buildIndex, query, ENGINE_NAME} from '../engine/minisearch.js';
+import {BOOKMARKLET} from '../bookmarklet/bookmarklet.js';
 
 const SUPPORTED_VERSIONS = [1];
 const DEFAULT_WIKI_INDEX_FILE = 'search-index.json'; // convention used only by the ?wiki / ?from shortcuts
@@ -44,7 +44,7 @@ const els = {
   target: document.getElementById('m-target'),
   anchor: document.getElementById('m-anchor'),
   text: document.getElementById('m-text'),
-  fragSupport: document.getElementById('frag-support'),
+  fragSupport: document.getElementById('frag-support')
 };
 
 let SITE = null;
@@ -56,10 +56,16 @@ let HANDLE = null;
 const FRAGMENTS_SUPPORTED = 'fragmentDirective' in document;
 
 // Positioning levers (overridable via URL params + the Options row).
-const MODES = { target: 'new', anchor: true, text: true };
+const MODES = {target: 'new', anchor: true, text: true};
 
-const setStatus = text => { els.status.className = 'status'; els.status.textContent = text; };
-const fail = text => { els.status.className = 'status error'; els.status.textContent = text; };
+const setStatus = text => {
+  els.status.className = 'status';
+  els.status.textContent = text;
+};
+const fail = text => {
+  els.status.className = 'status error';
+  els.status.textContent = text;
+};
 
 const el = (tag, cls, text) => {
   const n = document.createElement(tag);
@@ -70,7 +76,10 @@ const el = (tag, cls, text) => {
 
 const debounce = (fn, ms) => {
   let t;
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  return (...a) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...a), ms);
+  };
 };
 
 // Resolve which index to load, in priority order:
@@ -82,13 +91,13 @@ const debounce = (fn, ms) => {
 //   (none)                  nothing to search yet — loadIndex() explains.
 const resolveIndexUrl = params => {
   const index = params.get('index');
-  if (index) return { url: index, note: null };
+  if (index) return {url: index, note: null};
 
   let owner, repo;
   const wiki = params.get('wiki');
   if (wiki) {
     const m = /^([^/]+)\/([^/]+)$/.exec(wiki.trim());
-    if (!m) return { url: null, note: `bad ?wiki value "${wiki}" (want owner/repo)` };
+    if (!m) return {url: null, note: `bad ?wiki value "${wiki}" (want owner/repo)`};
     [, owner, repo] = m;
   } else {
     const from = params.get('from');
@@ -98,24 +107,32 @@ const resolveIndexUrl = params => {
 
   if (owner && repo) {
     const file = params.get('file') || DEFAULT_WIKI_INDEX_FILE;
-    return { url: `https://raw.githubusercontent.com/wiki/${owner}/${repo}/${file}`, note: null };
+    return {url: `https://raw.githubusercontent.com/wiki/${owner}/${repo}/${file}`, note: null};
   }
 
   // No index, no wiki, and not launched from a recognizable wiki page.
-  return { url: null, note: null };
+  return {url: null, note: null};
 };
 
 // Fetch + validate. Each failure throws an Error with a specific, human message.
 const loadIndex = async url => {
-  if (!url) throw new Error('Nothing to search yet.\n\nClick the bookmarklet while you’re ON a GitHub wiki page (github.com/<owner>/<repo>/wiki/…) — it points the search at that wiki.\n\nOr add ?wiki=<owner>/<repo> or ?index=<url> to this page’s URL.');
+  if (!url)
+    throw new Error(
+      'Nothing to search yet.\n\nClick the bookmarklet while you’re ON a GitHub wiki page (github.com/<owner>/<repo>/wiki/…) — it points the search at that wiki.\n\nOr add ?wiki=<owner>/<repo> or ?index=<url> to this page’s URL.'
+    );
 
   let res;
   try {
-    res = await fetch(url, { mode: 'cors' });
+    res = await fetch(url, {mode: 'cors'});
   } catch {
-    throw new Error(`Couldn't load the index at\n${url}\nNetwork error (offline, blocked, or no CORS header).`);
+    throw new Error(
+      `Couldn't load the index at\n${url}\nNetwork error (offline, blocked, or no CORS header).`
+    );
   }
-  if (!res.ok) throw new Error(`Couldn't load the index at\n${url}\nServer returned ${res.status} ${res.statusText}.`);
+  if (!res.ok)
+    throw new Error(
+      `Couldn't load the index at\n${url}\nServer returned ${res.status} ${res.statusText}.`
+    );
 
   let data;
   try {
@@ -125,11 +142,15 @@ const loadIndex = async url => {
   }
 
   if (!SUPPORTED_VERSIONS.includes(data.v)) {
-    throw new Error(`Index format v${data.v ?? '?'} isn't supported by this app (it understands v${SUPPORTED_VERSIONS.join(', v')}). One of them is out of date.`);
+    throw new Error(
+      `Index format v${data.v ?? '?'} isn't supported by this app (it understands v${SUPPORTED_VERSIONS.join(', v')}). One of them is out of date.`
+    );
   }
   const site = data.site;
   if (!site || typeof site.urlTemplate !== 'string' || !site.urlTemplate.includes('{page}')) {
-    throw new Error('Index is missing site.urlTemplate (or it has no {page} placeholder) — result links can\'t be built.');
+    throw new Error(
+      "Index is missing site.urlTemplate (or it has no {page} placeholder) — result links can't be built."
+    );
   }
   if (!Array.isArray(data.docs) || data.docs.length === 0) {
     throw new Error('Index has no docs to search.');
@@ -172,19 +193,31 @@ const resultUrl = (doc, phrase) => {
 };
 
 const markSnippet = (node, snippet, phrase) => {
-  if (!phrase) { node.textContent = snippet; return; }
+  if (!phrase) {
+    node.textContent = snippet;
+    return;
+  }
   const i = snippet.toLowerCase().indexOf(phrase.toLowerCase());
-  if (i < 0) { node.textContent = snippet; return; }
+  if (i < 0) {
+    node.textContent = snippet;
+    return;
+  }
   node.append(
     document.createTextNode(snippet.slice(0, i)),
     el('mark', null, snippet.slice(i, i + phrase.length)),
-    document.createTextNode(snippet.slice(i + phrase.length)),
+    document.createTextNode(snippet.slice(i + phrase.length))
   );
 };
 
 // Close the popup, but only when we actually are one (launched via the
 // bookmarklet, so window.opener exists). A standalone tab must never self-close.
-const closePopup = () => { if (window.opener) { try { window.close(); } catch {} } };
+const closePopup = () => {
+  if (window.opener) {
+    try {
+      window.close();
+    } catch {}
+  }
+};
 
 // Wire the result link's navigation per the active target mode. Text fragments
 // require *user-initiated* navigation, so a real <a> click keeps them working for
@@ -196,7 +229,9 @@ const applyTarget = a => {
     a.addEventListener('click', e => {
       e.preventDefault();
       window.opener.location.href = a.href;
-      try { window.opener.focus(); } catch {}
+      try {
+        window.opener.focus();
+      } catch {}
       setTimeout(closePopup, 0); // get out of the way once the tab is on its way
     });
     return;
@@ -206,7 +241,7 @@ const applyTarget = a => {
   // The new/reused tab steals focus → window blur → the blur handler closes us.
 };
 
-const renderHit = ({ doc, phrase, snippet }) => {
+const renderHit = ({doc, phrase, snippet}) => {
   const a = el('a', 'hit');
   a.href = resultUrl(doc, phrase);
   applyTarget(a);
@@ -225,7 +260,7 @@ const run = () => {
   els.results.replaceChildren();
   if (!q) return;
 
-  const hits = query(HANDLE, q, { limit: 25 });
+  const hits = query(HANDLE, q, {limit: 25});
   if (!hits.length) {
     els.results.append(el('div', 'empty', `No matches for “${q}”.`));
     return;
@@ -277,10 +312,14 @@ const wireSettings = params => {
 // the document doesn't kill the popup mid-search. Escape closes it too.
 const wirePopupDismissal = () => {
   if (!window.opener) return;
-  window.addEventListener('blur', () => setTimeout(() => {
-    if (!document.hasFocus()) closePopup();
-  }, 0));
-  window.addEventListener('keydown', e => { if (e.key === 'Escape') closePopup(); });
+  window.addEventListener('blur', () =>
+    setTimeout(() => {
+      if (!document.hasFocus()) closePopup();
+    }, 0)
+  );
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closePopup();
+  });
 };
 
 // Standalone (not a popup): pitch the bookmarklet above the search box as a real
@@ -298,7 +337,7 @@ const setupPromo = () => {
     el('span', null, '🔖 Search wikis in place — drag '),
     bm,
     el('span', null, ' to your bookmarks bar. '),
-    how,
+    how
   );
   els.promo.hidden = false;
 };
@@ -310,7 +349,7 @@ const main = async () => {
   wirePopupDismissal();
   setupPromo();
 
-  const { url, note } = resolveIndexUrl(params);
+  const {url, note} = resolveIndexUrl(params);
   setStatus(note ? note + ' — loading index…' : 'Loading index…');
 
   let index;
@@ -328,9 +367,16 @@ const main = async () => {
   // select, so typing replaces) on next open. Keyed per index so distinct wikis
   // don't bleed into each other.
   const qKey = 'wiki-search:q:' + (params.get('wiki') || params.get('index') || '');
-  const save = () => { try { localStorage.setItem(qKey, els.q.value); } catch {} };
+  const save = () => {
+    try {
+      localStorage.setItem(qKey, els.q.value);
+    } catch {}
+  };
   const debouncedRun = debounce(run, 90);
-  els.q.addEventListener('input', () => { save(); debouncedRun(); });
+  els.q.addEventListener('input', () => {
+    save();
+    debouncedRun();
+  });
 
   const initial = params.get('q');
   if (initial) {
@@ -338,8 +384,14 @@ const main = async () => {
     run();
   } else {
     let saved = '';
-    try { saved = localStorage.getItem(qKey) || ''; } catch {}
-    if (saved) { els.q.value = saved; els.q.select(); run(); }
+    try {
+      saved = localStorage.getItem(qKey) || '';
+    } catch {}
+    if (saved) {
+      els.q.value = saved;
+      els.q.select();
+      run();
+    }
   }
 };
 

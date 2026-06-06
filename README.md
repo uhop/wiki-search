@@ -39,12 +39,12 @@ its own URL template, so the same app works for any site with no hardcoded host.
 <details>
 <summary>Repo layout & local run</summary>
 
-| Path | What |
-|------|------|
-| `index.html` | Landing + bookmarklet-install page (the Pages root). |
-| `app/` | The search page (loads + validates an index, searches, links out). |
-| `builder/` | `wiki-index` CLI: Markdown → the JSON index. |
-| `engine/` | Search core: MiniSearch (vendored), with a zero-dep fallback. |
+| Path           | What                                                                |
+| -------------- | ------------------------------------------------------------------- |
+| `index.html`   | Landing + bookmarklet-install page (the Pages root).                |
+| `app/`         | The search page (loads + validates an index, searches, links out).  |
+| `builder/`     | `wiki-index` CLI: Markdown → the JSON index.                        |
+| `engine/`      | Search core: MiniSearch (vendored), with a zero-dep fallback.       |
 | `bookmarklet/` | The bookmarklet — one constant, imported by the app + install page. |
 
 Run locally: `python3 -m http.server` from the repo root, then open

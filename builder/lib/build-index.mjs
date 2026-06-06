@@ -5,10 +5,10 @@
 // order, sequential ids, no timestamps — so a CI `git diff --exit-code` can gate
 // a stale committed index.
 
-import { readdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { splitSections } from './markdown.mjs';
-import { createSlugger } from './slug.mjs';
+import {readdir, readFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {splitSections} from './markdown.mjs';
+import {createSlugger} from './slug.mjs';
 
 // GitHub stores page "Foo Bar" as Foo-Bar.md and special pages (_Sidebar,
 // _Footer, …) start with an underscore — those are chrome, not content.
@@ -19,7 +19,7 @@ const firstH1 = md => {
   return m ? m[1].trim() : null;
 };
 
-export const buildIndex = async ({ wikiDir, urlTemplate, siteName, fragments = true }) => {
+export const buildIndex = async ({wikiDir, urlTemplate, siteName, fragments = true}) => {
   const files = (await readdir(wikiDir)).filter(isContentPage).sort();
   const docs = [];
   let id = 0;
@@ -36,10 +36,10 @@ export const buildIndex = async ({ wikiDir, urlTemplate, siteName, fragments = t
         title,
         heading: sec.heading ?? title,
         anchor: sec.heading ? slug(sec.heading) : '', // preamble → page top (no anchor)
-        text: sec.text || sec.heading || title,
+        text: sec.text || sec.heading || title
       });
     }
   }
 
-  return { v: 1, site: { name: siteName, urlTemplate, fragments }, docs };
+  return {v: 1, site: {name: siteName, urlTemplate, fragments}, docs};
 };

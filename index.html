@@ -1,172 +1,307 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>wiki-search — add search to any wiki</title>
-  <meta name="description" content="A bookmarklet + hosted app that add real search to any GitHub wiki or docs site, jumping you straight to the matching section.">
-  <style>
-    :root {
-      --bg: #fff; --fg: #1f2328; --muted: #656d76; --border: #d0d7de;
-      --accent: #0969da; --card: #f6f8fa; --kbd-bg: #f6f8fa;
-    }
-    @media (prefers-color-scheme: dark) {
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wiki-search — add search to any wiki</title>
+    <meta
+      name="description"
+      content="A bookmarklet + hosted app that add real search to any GitHub wiki or docs site, jumping you straight to the matching section."
+    />
+    <style>
       :root {
-        --bg: #0d1117; --fg: #e6edf3; --muted: #8b949e; --border: #30363d;
-        --accent: #4493f8; --card: #161b22; --kbd-bg: #161b22;
+        --bg: #fff;
+        --fg: #1f2328;
+        --muted: #656d76;
+        --border: #d0d7de;
+        --accent: #0969da;
+        --card: #f6f8fa;
+        --kbd-bg: #f6f8fa;
       }
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0 auto; max-width: 720px; padding: 32px 20px 64px;
-      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      color: var(--fg); background: var(--bg);
-    }
-    h1 { font-size: 30px; margin: 0 0 4px; }
-    h2 { font-size: 20px; margin: 40px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-    .lede { font-size: 18px; color: var(--muted); margin: 0 0 8px; }
-    a { color: var(--accent); }
-    p { margin: 12px 0; }
-    ol { padding-left: 22px; }
-    ol > li { margin: 14px 0; }
-    code, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    kbd {
-      font-size: 12px; padding: 2px 6px; border: 1px solid var(--border);
-      border-bottom-width: 2px; border-radius: 5px; background: var(--kbd-bg); white-space: nowrap;
-    }
-    .demo {
-      display: inline-block; margin-top: 6px; padding: 9px 16px; font-weight: 600;
-      color: #fff; background: var(--accent); border-radius: 8px; text-decoration: none;
-    }
-    .bm-row {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-      margin: 12px 0; padding: 16px; background: var(--card);
-      border: 1px solid var(--border); border-radius: 10px;
-    }
-    a.bm {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 9px 16px; font-size: 16px; font-weight: 600;
-      color: var(--accent); text-decoration: none; white-space: nowrap;
-      background: var(--bg); border: 1px solid var(--accent); border-radius: 8px;
-      cursor: grab;
-    }
-    a.bm:active { cursor: grabbing; }
-    a.bm[aria-disabled="true"] { color: var(--muted); border-color: var(--border); cursor: default; }
-    .bm-row .hint { font-size: 14px; color: var(--muted); }
-    .fallback { margin-top: 8px; }
-    .fallback textarea {
-      width: 100%; height: 76px; margin-top: 8px; padding: 10px;
-      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      color: var(--fg); background: var(--card);
-      border: 1px solid var(--border); border-radius: 8px; resize: vertical; word-break: break-all;
-    }
-    .copy {
-      margin-top: 8px; padding: 6px 12px; font: inherit; font-size: 14px;
-      color: var(--fg); background: var(--bg);
-      border: 1px solid var(--border); border-radius: 7px; cursor: pointer;
-    }
-    .copy:hover { border-color: var(--accent); }
-    .note { font-size: 14px; color: var(--muted); }
-    summary { cursor: pointer; font-weight: 600; }
-    footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 14px; color: var(--muted); }
-    footer a { margin-right: 16px; }
-  </style>
-</head>
-<body>
-  <h1>🔍 wiki-search</h1>
-  <p class="lede">Add real search to any GitHub wiki or docs site — and jump straight to the matching section. No moving your docs, no tracking, no build step for readers.</p>
-
-  <p>
-    <a class="demo" href="./app/?wiki=uhop/wiki-search">Try the live demo →</a>
-    &nbsp; <span class="note">(searches this project's own wiki)</span>
-  </p>
-
-  <h2>Install the bookmarklet</h2>
-  <p>
-    The bookmarklet is a thin launcher: on any wiki page it opens a small
-    wiki-search window. Pick a result and it sends <em>your current tab</em> to
-    that section (use Back to return) — no tab spam. All the logic lives here on
-    this page's origin, so nothing is injected into the wiki and nothing is tracked.
-  </p>
-  <ol>
-    <li>
-      <strong>Show your bookmarks bar</strong> if it's hidden:
-      <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>
-      (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> on macOS).
-    </li>
-    <li>
-      <strong>Drag this to your bookmarks bar:</strong>
-      <div class="bm-row">
-        <a class="bm" id="bm" href="#" aria-disabled="true"
-           title="Drag me to your bookmarks bar">🔍 Wiki Search</a>
-        <span class="hint">…or right-click it → <em>Bookmark this link</em> / <em>Add to favorites</em>.
-          Clicking it <em>here</em> does nothing — it only works once it's a bookmark and you're on a wiki page.</span>
-      </div>
-    </li>
-    <li>
-      <strong>Use it:</strong> open any GitHub wiki page (e.g.
-      <code>github.com/<var>owner</var>/<var>repo</var>/wiki/…</code>) and click the
-      bookmark. Search, then click a result to jump to the section.
-    </li>
-  </ol>
-
-  <details class="fallback">
-    <summary>Can't drag? (keyboard, or copy-paste install)</summary>
-    <p class="note">
-      Create a new bookmark and paste the code below into its <strong>URL / address
-      field</strong> — <em>not</em> the browser's address bar, which strips the
-      <code>javascript:</code> prefix. Name it anything (e.g. <em>Wiki Search</em>).
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --fg: #e6edf3;
+          --muted: #8b949e;
+          --border: #30363d;
+          --accent: #4493f8;
+          --card: #161b22;
+          --kbd-bg: #161b22;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 720px;
+        padding: 32px 20px 64px;
+        font:
+          16px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Helvetica,
+          Arial,
+          sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      h1 {
+        font-size: 30px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 40px 0 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+      }
+      .lede {
+        font-size: 18px;
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+      a {
+        color: var(--accent);
+      }
+      p {
+        margin: 12px 0;
+      }
+      ol {
+        padding-left: 22px;
+      }
+      ol > li {
+        margin: 14px 0;
+      }
+      code,
+      kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      kbd {
+        font-size: 12px;
+        padding: 2px 6px;
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        background: var(--kbd-bg);
+        white-space: nowrap;
+      }
+      .demo {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 9px 16px;
+        font-weight: 600;
+        color: #fff;
+        background: var(--accent);
+        border-radius: 8px;
+        text-decoration: none;
+      }
+      .bm-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin: 12px 0;
+        padding: 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      a.bm {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 16px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--accent);
+        text-decoration: none;
+        white-space: nowrap;
+        background: var(--bg);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        cursor: grab;
+      }
+      a.bm:active {
+        cursor: grabbing;
+      }
+      a.bm[aria-disabled='true'] {
+        color: var(--muted);
+        border-color: var(--border);
+        cursor: default;
+      }
+      .bm-row .hint {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .fallback {
+        margin-top: 8px;
+      }
+      .fallback textarea {
+        width: 100%;
+        height: 76px;
+        margin-top: 8px;
+        padding: 10px;
+        font:
+          12px/1.5 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+        color: var(--fg);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        resize: vertical;
+        word-break: break-all;
+      }
+      .copy {
+        margin-top: 8px;
+        padding: 6px 12px;
+        font: inherit;
+        font-size: 14px;
+        color: var(--fg);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      .copy:hover {
+        border-color: var(--accent);
+      }
+      .note {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      footer {
+        margin-top: 48px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        font-size: 14px;
+        color: var(--muted);
+      }
+      footer a {
+        margin-right: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔍 wiki-search</h1>
+    <p class="lede">
+      Add real search to any GitHub wiki or docs site — and jump straight to the matching section.
+      No moving your docs, no tracking, no build step for readers.
     </p>
-    <textarea id="bm-code" readonly spellcheck="false" aria-label="Bookmarklet code">Loading…</textarea>
-    <div><button class="copy" id="copy" type="button">Copy code</button></div>
-  </details>
 
-  <p class="note">
-    <strong>Browser support.</strong> Desktop drag works in Chrome, Edge, Firefox,
-    and Safari. On mobile, bookmarklets are fiddly and on iOS run only in Safari —
-    add any bookmark, then edit it and paste the code above into its URL.
-  </p>
+    <p>
+      <a class="demo" href="./app/?wiki=uhop/wiki-search">Try the live demo →</a>
+      &nbsp; <span class="note">(searches this project's own wiki)</span>
+    </p>
 
-  <noscript>
-    <p class="note"><strong>JavaScript is off.</strong> Enable it to grab the
-    bookmarklet — it's a small launcher that needs JavaScript to run anyway.</p>
-  </noscript>
+    <h2>Install the bookmarklet</h2>
+    <p>
+      The bookmarklet is a thin launcher: on any wiki page it opens a small wiki-search window. Pick
+      a result and it sends <em>your current tab</em> to that section (use Back to return) — no tab
+      spam. All the logic lives here on this page's origin, so nothing is injected into the wiki and
+      nothing is tracked.
+    </p>
+    <ol>
+      <li>
+        <strong>Show your bookmarks bar</strong> if it's hidden:
+        <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> on
+        macOS).
+      </li>
+      <li>
+        <strong>Drag this to your bookmarks bar:</strong>
+        <div class="bm-row">
+          <a class="bm" id="bm" href="#" aria-disabled="true" title="Drag me to your bookmarks bar"
+            >🔍 Wiki Search</a
+          >
+          <span class="hint"
+            >…or right-click it → <em>Bookmark this link</em> / <em>Add to favorites</em>. Clicking
+            it <em>here</em> does nothing — it only works once it's a bookmark and you're on a wiki
+            page.</span
+          >
+        </div>
+      </li>
+      <li>
+        <strong>Use it:</strong> open any GitHub wiki page (e.g.
+        <code>github.com/<var>owner</var>/<var>repo</var>/wiki/…</code>) and click the bookmark.
+        Search, then click a result to jump to the section.
+      </li>
+    </ol>
 
-  <h2>How it works</h2>
-  <p>
-    Search runs against a small, self-describing JSON index built from your
-    Markdown (the index carries its own URL template, so result links are built
-    with no hardcoded host — that's what makes wiki-search reusable for any site).
-    The bookmarklet only ever opens this app on its own origin, sidestepping the
-    wiki page's content-security policy. Results carry
-    <a href="https://developer.mozilla.org/docs/Web/URI/Reference/Fragment/Text_fragments">Text Fragment</a>
-    directives so, where the browser allows it, the exact phrase is highlighted too.
-  </p>
+    <details class="fallback">
+      <summary>Can't drag? (keyboard, or copy-paste install)</summary>
+      <p class="note">
+        Create a new bookmark and paste the code below into its
+        <strong>URL / address field</strong> — <em>not</em> the browser's address bar, which strips
+        the <code>javascript:</code> prefix. Name it anything (e.g. <em>Wiki Search</em>).
+      </p>
+      <textarea id="bm-code" readonly spellcheck="false" aria-label="Bookmarklet code">
+Loading…</textarea
+      >
+      <div><button class="copy" id="copy" type="button">Copy code</button></div>
+    </details>
 
-  <footer>
-    <a href="https://github.com/uhop/wiki-search">Source</a>
-    <a href="https://github.com/uhop/wiki-search/wiki">Wiki</a>
-    <a href="./app/?wiki=uhop/wiki-search">Live demo</a>
-  </footer>
+    <p class="note">
+      <strong>Browser support.</strong> Desktop drag works in Chrome, Edge, Firefox, and Safari. On
+      mobile, bookmarklets are fiddly and on iOS run only in Safari — add any bookmark, then edit it
+      and paste the code above into its URL.
+    </p>
 
-  <script type="module">
-    import { BOOKMARKLET } from './bookmarklet/bookmarklet.js';
+    <noscript>
+      <p class="note">
+        <strong>JavaScript is off.</strong> Enable it to grab the bookmarklet — it's a small
+        launcher that needs JavaScript to run anyway.
+      </p>
+    </noscript>
 
-    const bm = document.getElementById('bm');
-    const code = document.getElementById('bm-code');
-    const copy = document.getElementById('copy');
+    <h2>How it works</h2>
+    <p>
+      Search runs against a small, self-describing JSON index built from your Markdown (the index
+      carries its own URL template, so result links are built with no hardcoded host — that's what
+      makes wiki-search reusable for any site). The bookmarklet only ever opens this app on its own
+      origin, sidestepping the wiki page's content-security policy. Results carry
+      <a href="https://developer.mozilla.org/docs/Web/URI/Reference/Fragment/Text_fragments"
+        >Text Fragment</a
+      >
+      directives so, where the browser allows it, the exact phrase is highlighted too.
+    </p>
 
-    bm.href = BOOKMARKLET;
-    bm.removeAttribute('aria-disabled');
-    code.value = BOOKMARKLET;
+    <footer>
+      <a href="https://github.com/uhop/wiki-search">Source</a>
+      <a href="https://github.com/uhop/wiki-search/wiki">Wiki</a>
+      <a href="./app/?wiki=uhop/wiki-search">Live demo</a>
+    </footer>
 
-    copy.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(code.value); }
-      catch { code.focus(); code.select(); }
-      const was = copy.textContent;
-      copy.textContent = 'Copied ✓';
-      setTimeout(() => { copy.textContent = was; }, 1500);
-    });
-  </script>
-</body>
+    <script type="module">
+      import {BOOKMARKLET} from './bookmarklet/bookmarklet.js';
+
+      const bm = document.getElementById('bm');
+      const code = document.getElementById('bm-code');
+      const copy = document.getElementById('copy');
+
+      bm.href = BOOKMARKLET;
+      bm.removeAttribute('aria-disabled');
+      code.value = BOOKMARKLET;
+
+      copy.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(code.value);
+        } catch {
+          code.focus();
+          code.select();
+        }
+        const was = copy.textContent;
+        copy.textContent = 'Copied ✓';
+        setTimeout(() => {
+          copy.textContent = was;
+        }, 1500);
+      });
+    </script>
+  </body>
 </html>

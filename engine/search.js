@@ -12,7 +12,7 @@
 // Phrase + snippet come from the shared engine/phrase.js, so links and highlights
 // match the MiniSearch engine.
 
-import { pickPhrase, snippetAround } from './phrase.js';
+import {pickPhrase, snippetAround} from './phrase.js';
 
 export const ENGINE_NAME = 'hand-rolled';
 
@@ -29,7 +29,7 @@ const tokenize = s =>
     .filter(t => t.length > 1 && !STOP.has(t));
 
 // Field weights: a hit in the title beats a hit in a heading beats body text.
-const FIELD_WEIGHT = { title: 4, heading: 3, text: 1 };
+const FIELD_WEIGHT = {title: 4, heading: 3, text: 1};
 
 export const buildIndex = docs => {
   const entries = docs.map(doc => {
@@ -40,12 +40,12 @@ export const buildIndex = docs => {
         weights.set(term, (weights.get(term) || 0) + w);
       }
     }
-    return { doc, weights };
+    return {doc, weights};
   });
-  return { entries };
+  return {entries};
 };
 
-export const query = (handle, q, { limit = 20 } = {}) => {
+export const query = (handle, q, {limit = 20} = {}) => {
   const terms = tokenize(q);
   if (!terms.length) return [];
   const uniq = [...new Set(terms)];
@@ -56,14 +56,17 @@ export const query = (handle, q, { limit = 20 } = {}) => {
     let matched = 0;
     for (const term of uniq) {
       const w = entry.weights.get(term) || 0;
-      if (w > 0) { score += w; ++matched; }
+      if (w > 0) {
+        score += w;
+        ++matched;
+      }
     }
     if (!score) continue;
     // AND-bonus: reward docs that cover every query term.
     if (matched === uniq.length && uniq.length > 1) score *= 1.5;
-    const { doc } = entry;
+    const {doc} = entry;
     const phrase = pickPhrase(doc.text || '', q, doc.heading || '');
-    scored.push({ doc, score, phrase, snippet: snippetAround(doc.text || '', phrase) });
+    scored.push({doc, score, phrase, snippet: snippetAround(doc.text || '', phrase)});
   }
 
   scored.sort((a, b) => b.score - a.score || a.doc.id - b.doc.id);

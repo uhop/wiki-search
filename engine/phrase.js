@@ -21,11 +21,21 @@ const locate = (src, query) => {
   let at = whole && hay.includes(whole) ? hay.indexOf(whole) : -1;
   let len = whole.length;
   if (at < 0) {
-    const words = [...new Set(query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w => w.length > 1))]
-      .sort((a, b) => b.length - a.length);
+    const words = [
+      ...new Set(
+        query
+          .toLowerCase()
+          .split(/[^\p{L}\p{N}]+/u)
+          .filter(w => w.length > 1)
+      )
+    ].sort((a, b) => b.length - a.length);
     for (const w of words) {
       const i = hay.indexOf(w);
-      if (i >= 0) { at = i; len = w.length; break; }
+      if (i >= 0) {
+        at = i;
+        len = w.length;
+        break;
+      }
     }
   }
   if (at < 0) return null;

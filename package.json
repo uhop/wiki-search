@@ -7,7 +7,9 @@
     "wiki-search-index": "builder/wiki-index.mjs"
   },
   "scripts": {
-    "test": "node builder/test/run.mjs"
+    "test": "node builder/test/run.mjs",
+    "lint": "prettier --check .",
+    "lint:fix": "prettier --write ."
   },
   "files": [
     "builder/wiki-index.mjs",
@@ -19,6 +21,9 @@
   ],
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3"
   },
   "keywords": [
     "wiki",

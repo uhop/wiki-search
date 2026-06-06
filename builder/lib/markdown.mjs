@@ -9,16 +9,16 @@ const ATX = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
 // preamble section with heading=null, level=0. `#` inside fenced code is
 // ignored so code comments don't masquerade as headings.
 export const splitSections = md => {
-  const sections = [{ level: 0, heading: null, lines: [] }];
+  const sections = [{level: 0, heading: null, lines: []}];
   let inFence = false;
   for (const line of md.split(/\r?\n/)) {
     if (FENCE.test(line)) inFence = !inFence;
     const m = inFence ? null : ATX.exec(line);
-    if (m) sections.push({ level: m[1].length, heading: m[2].trim(), lines: [] });
+    if (m) sections.push({level: m[1].length, heading: m[2].trim(), lines: []});
     else sections.at(-1).lines.push(line);
   }
   return sections
-    .map(s => ({ level: s.level, heading: s.heading, text: toPlainText(s.lines.join('\n')) }))
+    .map(s => ({level: s.level, heading: s.heading, text: toPlainText(s.lines.join('\n'))}))
     .filter(s => s.heading || s.text); // drop an empty preamble
 };
 
@@ -27,16 +27,16 @@ export const splitSections = md => {
 export const toPlainText = md =>
   md
     .replace(/^[ \t]*(```|~~~).*$/gm, ' ') // fence delimiters (keep the code text)
-    .replace(/`([^`]*)`/g, '$1')           // inline code → its text
+    .replace(/`([^`]*)`/g, '$1') // inline code → its text
     .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$1') // [[Display|Page]] wiki link → Display
-    .replace(/\[\[([^\]]+)\]\]/g, '$1')    // [[Page]] wiki link → Page
+    .replace(/\[\[([^\]]+)\]\]/g, '$1') // [[Page]] wiki link → Page
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // image → alt
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')  // link → text
-    .replace(/<[^>]+>/g, ' ')              // strip HTML tags
-    .replace(/^[ \t>]*>+/gm, ' ')          // blockquote markers
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // link → text
+    .replace(/<[^>]+>/g, ' ') // strip HTML tags
+    .replace(/^[ \t>]*>+/gm, ' ') // blockquote markers
     .replace(/^\s{0,3}([-*+]|\d+\.)\s+/gm, ' ') // list markers
-    .replace(/[*_~]+/g, '')                // emphasis
+    .replace(/[*_~]+/g, '') // emphasis
     .replace(/^\s*\|.*$/gm, m => m.replace(/\|/g, ' ')) // table pipes
-    .replace(/^#{1,6}\s+/gm, '')           // stray heading marks
+    .replace(/^#{1,6}\s+/gm, '') // stray heading marks
     .replace(/\s+/g, ' ')
     .trim();
