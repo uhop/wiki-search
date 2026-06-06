@@ -1,9 +1,9 @@
 // app/app.js — the popup search app.
 //
-// Opened via the bookmarklet's window.open() from a GitHub wiki page, this is a
-// new top-level context on its own origin, so the wiki page's CSP does not govern
-// it. The bookmarklet hands us the page it was clicked on (?from=); we derive the
-// wiki, fetch a self-describing, versioned index, validate it (verify-or-explain —
+// Opened via the bookmarklet's window.open() from any GitHub page, this is a
+// new top-level context on its own origin, so the originating page's CSP does not
+// govern it. The bookmarklet hands us the page it was clicked on (?from=); we derive
+// the wiki, fetch a self-describing, versioned index, validate it (verify-or-explain —
 // every failure produces a specific message, never a blank box), search, and
 // render results as real <a> links.
 //
@@ -33,7 +33,12 @@ import {BOOKMARKLET} from '../bookmarklet/bookmarklet.js';
 
 const SUPPORTED_VERSIONS = [1];
 const DEFAULT_WIKI_INDEX_FILE = 'search-index.json'; // convention used only by the ?wiki / ?from shortcuts
-const WIKI_URL_RE = /github\.com\/([^/]+)\/([^/]+)\/wiki/; // owner/repo from a wiki page URL
+// owner/repo from any github.com page URL. The bookmarklet hands us location.href —
+// the repo root, /wiki/…, /actions, /pull/123, whatever — and the wiki for
+// github.com/<owner>/<repo>/anything is always github.com/<owner>/<repo>/wiki (we load
+// its index from raw.githubusercontent below). Take the first two path segments; the
+// host must be exactly github.com (not gist.github.com); ? and # end a segment.
+const GITHUB_REPO_RE = /^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/;
 
 const els = {
   q: document.getElementById('q'),
@@ -101,7 +106,7 @@ const resolveIndexUrl = params => {
     [, owner, repo] = m;
   } else {
     const from = params.get('from');
-    const m = from && WIKI_URL_RE.exec(from);
+    const m = from && GITHUB_REPO_RE.exec(from);
     if (m) [, owner, repo] = m;
   }
 
@@ -118,7 +123,7 @@ const resolveIndexUrl = params => {
 const loadIndex = async url => {
   if (!url)
     throw new Error(
-      'Nothing to search yet.\n\nClick the bookmarklet while you’re ON a GitHub wiki page (github.com/<owner>/<repo>/wiki/…) — it points the search at that wiki.\n\nOr add ?wiki=<owner>/<repo> or ?index=<url> to this page’s URL.'
+      'Nothing to search yet.\n\nClick the bookmarklet while you’re ON a GitHub repo or wiki page (github.com/<owner>/<repo>/…) — it points the search at that repo’s wiki.\n\nOr add ?wiki=<owner>/<repo> or ?index=<url> to this page’s URL.'
     );
 
   let res;

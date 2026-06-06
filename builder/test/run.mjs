@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {dirname, join} from 'node:path';
 import {buildIndex} from '../lib/build-index.mjs';
+import {toPlainText} from '../lib/markdown.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const opts = {
@@ -66,6 +67,18 @@ assert.ok(
     !/\[\[/.test(pick.text),
   'wiki links reduced to display text'
 );
+
+// HTML entities are decoded so they don't survive as junk index terms. Typographic
+// entities become punctuation the tokenizer discards; numeric entities decode
+// generally (preserving genuine letters); unknown named entities drop to a space.
+assert.equal(toPlainText('a &mdash; b'), 'a — b', 'named entity → glyph');
+assert.equal(toPlainText('see &#128269; here'), 'see 🔍 here', 'decimal numeric entity decoded');
+assert.equal(toPlainText('hex &#x1F50D; mark'), 'hex 🔍 mark', 'hex numeric entity decoded');
+assert.equal(toPlainText('alpha &#945; kept'), 'alpha α kept', 'entity-encoded letter preserved');
+assert.equal(toPlainText('a&amp;b'), 'a&b', 'amp decoded');
+assert.equal(toPlainText('gone &nosuchthing; here'), 'gone here', 'unknown named entity dropped');
+assert.ok(!/\bmdash\b/.test(toPlainText('x &mdash; y')), 'no "mdash" junk term');
+assert.ok(!/128269/.test(toPlainText('x &#128269; y')), 'no numeric junk term');
 
 // Ids are sequential and the build is deterministic.
 assert.deepEqual(

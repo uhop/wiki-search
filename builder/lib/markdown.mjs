@@ -22,6 +22,65 @@ export const splitSections = md => {
     .filter(s => s.heading || s.text); // drop an empty preamble
 };
 
+// Common named HTML entities found in wiki prose — typographic punctuation and
+// symbols. Each maps to its character so it drops out at tokenization (— is
+// punctuation, not a word) instead of surviving as a junk term ("mdash"), and so
+// snippets render the glyph rather than the literal "&mdash;".
+const NAMED_ENTITIES = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+  mdash: '—',
+  ndash: '–',
+  hellip: '…',
+  bull: '•',
+  middot: '·',
+  copy: '©',
+  reg: '®',
+  trade: '™',
+  sect: '§',
+  para: '¶',
+  deg: '°',
+  plusmn: '±',
+  times: '×',
+  divide: '÷',
+  minus: '−',
+  frasl: '⁄',
+  laquo: '«',
+  raquo: '»',
+  lsquo: '‘',
+  rsquo: '’',
+  ldquo: '“',
+  rdquo: '”',
+  larr: '←',
+  rarr: '→',
+  uarr: '↑',
+  darr: '↓',
+  harr: '↔',
+  le: '≤',
+  ge: '≥',
+  ne: '≠',
+  prime: '′',
+  Prime: '″'
+};
+
+// Resolve HTML entities so they never pollute the term index. Numeric entities
+// (&#1234; / &#x1F50D;) decode generally — preserving genuine letters that happen
+// to be encoded (&#945; → α) while the typographic noise (&mdash;, arrows, emoji)
+// decodes to punctuation/symbols the tokenizer discards. Known named entities map
+// via the table above; anything else unknown collapses to a space so it can't
+// become a junk term ("mdash", "128269").
+const ENTITY_RE = /&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z][a-zA-Z0-9]*);/g;
+const decodeEntity = (_m, body) => {
+  if (body[0] !== '#') return NAMED_ENTITIES[body] ?? ' ';
+  const cp =
+    body[1] === 'x' || body[1] === 'X' ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
+  return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : ' ';
+};
+
 // Reduce Markdown to plain, collapsed text. Code *text* is kept (API names are
 // worth searching) — only the fence delimiters are removed.
 export const toPlainText = md =>
@@ -33,6 +92,7 @@ export const toPlainText = md =>
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // image → alt
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // link → text
     .replace(/<[^>]+>/g, ' ') // strip HTML tags
+    .replace(ENTITY_RE, decodeEntity) // HTML entities → glyph (drops &mdash;/&#1234; noise)
     .replace(/^[ \t>]*>+/gm, ' ') // blockquote markers
     .replace(/^\s{0,3}([-*+]|\d+\.)\s+/gm, ' ') // list markers
     .replace(/[*_~]+/g, '') // emphasis
