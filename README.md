@@ -54,7 +54,10 @@ Run locally: `python3 -m http.server` from the repo root, then open
 
 ## Release notes
 
+- 0.1.1 _HTML entities (`&mdash;`, `&#1234;`, …) are decoded so they no longer pollute the index._
 - 0.1.0 _Initial release of the `wiki-search-index` builder._
+
+For the full history see the wiki: [Release notes](https://github.com/uhop/wiki-search/wiki/Release-notes).
 
 ## License
 

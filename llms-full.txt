@@ -120,7 +120,7 @@ Static site at `https://uhop.github.io/wiki-search/app/`. It loads an index, sea
 
 - `?index=<url>` — load any v1 index from any URL.
 - `?wiki=<owner>/<repo>` — convenience: derive `https://raw.githubusercontent.com/wiki/<owner>/<repo>/search-index.json` (override the file with `?file=<name>`).
-- `?from=<page url>` — the current page URL, passed by the bookmarklet; the app parses `owner/repo` from it (`github.com/<owner>/<repo>/wiki`).
+- `?from=<page url>` — the current page URL, passed by the bookmarklet; the app parses `owner/repo` from it (any `github.com/<owner>/<repo>` page — repo root, `/wiki/…`, `/actions`, etc.).
 - `?q=<query>` — pre-fill the search box.
 - `?target=opener|new|tab`, `?anchor=off`, `?text=off` — positioning levers (also in the Options row).
 

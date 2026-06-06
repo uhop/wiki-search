@@ -52,7 +52,7 @@ The bookmarklet (`bookmarklet/bookmarklet.js`) does one thing: `window.open` the
 
 ### Verify-or-explain
 
-`app/app.js` validates every index it loads and, on any failure, shows a specific message (fetch/CORS error, invalid JSON, unsupported `v`, missing `site.urlTemplate`, empty `docs`) — never a blank result box. The same discipline drives the "nothing to search yet" copy when the app is opened off a recognizable wiki page.
+`app/app.js` validates every index it loads and, on any failure, shows a specific message (fetch/CORS error, invalid JSON, unsupported `v`, missing `site.urlTemplate`, empty `docs`) — never a blank result box. The same discipline drives the "nothing to search yet" copy when the app is opened off a recognizable GitHub page.
 
 ### Text-fragment positioning
 
