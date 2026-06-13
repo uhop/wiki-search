@@ -23,7 +23,9 @@ straight to the matching section — without moving your docs off the wiki.
   ```
 
   Commit that `search-index.json` into your wiki, then add a one-line Search
-  section. Full guide — including keeping the index fresh —
+  section. Got API docs in your README? Run from your repo root and add
+  `--file README.md` to fold it into the same index — results deep-link to the
+  rendered file on GitHub. Full guide — including keeping the index fresh —
   [Add search to your wiki](https://github.com/uhop/wiki-search/wiki/Add-Search).
 
 ## How it works

@@ -29,9 +29,11 @@ Commit `search-index.json` into the wiki (it's served from `raw.githubuserconten
 - `--repo <owner/repo>` — GitHub repo; builds the wiki URL template. Needed when the wiki's git origin lacks the `.wiki.git` suffix the tool infers from.
 - `--url-template <tpl>` — result-URL template containing `{page}` (for any non-GitHub site).
 - `--name <site name>` — human label shown in the search UI.
+- `--file <path>` — also index a repo file (e.g. `README.md`, often the real API doc) alongside the wiki pages; repeatable. Results deep-link to the rendered file on GitHub. Run from the repo root; relative/same-host only.
+- `--branch <name>` — blob branch for `--file` links (default: the repo's inferred default branch).
 - `--stdout` — write the index to stdout instead of a file.
 
-With neither `--url-template` nor `--repo`, owner/repo is inferred from the wiki dir's git origin (`…/<owner>/<repo>.wiki.git`). Exit code `2` if neither is given and inference fails.
+With neither `--url-template` nor `--repo`, owner/repo is inferred from the wiki dir's git origin (`…/<owner>/<repo>.wiki.git`). Exit code `2` if neither is given and inference fails. A `--file` document carries a relative `page` (`../blob/<branch>/<path>`) that the browser resolves against the wiki URL — additive, so the index stays `v: 1`.
 
 ## Output — index format v1
 
@@ -57,6 +59,9 @@ npx wiki-search-index --wiki ./wiki --repo uhop/stream-json
 
 # Non-GitHub docs site
 npx wiki-search-index --wiki ./docs --url-template 'https://example.com/docs/{page}' --name 'Example docs'
+
+# Fold the repo README (and more) into the wiki index — run from the repo root
+npx wiki-search-index --wiki ./wiki --file README.md --file CONTRIBUTING.md
 
 # Pipe the index elsewhere
 npx wiki-search-index --wiki ./wiki --stdout > index.json

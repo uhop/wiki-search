@@ -26,9 +26,11 @@ wiki-search-index [options]
 | `--repo <owner/repo>` | — | GitHub repo; builds the wiki URL template `https://github.com/<owner>/<repo>/wiki/{page}`. |
 | `--url-template <tpl>` | — | Result-URL template; **must contain `{page}`**. For any non-GitHub site. |
 | `--name <site name>` | `<repo> wiki` or `wiki` | Human label shown in the search UI. |
+| `--file <path>` | — | Also index a repo file (e.g. `README.md`) alongside the wiki pages. **Repeatable.** Run from the repo root; relative/same-host only. |
+| `--branch <name>` | inferred | Blob branch for `--file` links (the repo's default branch, inferred from git). |
 | `--stdout` | off | Write the index to stdout instead of a file. |
 
-Flags accept both `--key value` and `--key=value`. `--stdout` is a valueless boolean.
+Flags accept both `--key value` and `--key=value`. `--stdout` is a valueless boolean; `--file` may be repeated to fold in several files. A `--file` document links **out** of the wiki via a relative `page` (`../blob/<branch>/<path>`) the browser resolves against the wiki URL — additive, so the index stays `v: 1`. Without a wiki, `--file` alone still works against a `--repo`/`--url-template` wiki layout (the README-only case).
 
 ### Repo inference
 
@@ -49,6 +51,9 @@ npx wiki-search-index --wiki ./wiki --repo uhop/stream-json
 
 # Non-GitHub docs site
 npx wiki-search-index --wiki ./docs --url-template 'https://example.com/docs/{page}' --name 'Example docs'
+
+# Fold the repo README (and more) into the wiki index — run from the repo root
+npx wiki-search-index --wiki ./wiki --file README.md --file CONTRIBUTING.md
 
 # Emit to stdout
 npx wiki-search-index --wiki ./wiki --stdout > index.json
@@ -89,7 +94,7 @@ A wiki-search index is a single self-describing JSON document (canonical spec: `
 - `site.fragments` — `true` if the target renders Text Fragments; when `false`, clients omit the `:~:text=` directive.
 - `docs[]` — one entry per indexed section.
 - `doc.id` — stable integer, sequential in build order.
-- `doc.page` — the `{page}` substitution (for GitHub wikis, the page's URL segment, e.g. `Foo-Bar`).
+- `doc.page` — the `{page}` substitution (for GitHub wikis, the page's URL segment, e.g. `Foo-Bar`). May also be a **relative URL path** (e.g. `../blob/main/README.md`) for a folded-in repo file — the client encodes each `/`-separated segment but leaves `/` and `..` intact, and the browser normalizes the dot-segments on navigation.
 - `doc.title` — page display title.
 - `doc.heading` — section heading (falls back to the page title for a page's preamble).
 - `doc.anchor` — in-page anchor slug; `""` means the page top.
@@ -98,11 +103,13 @@ A wiki-search index is a single self-describing JSON document (canonical spec: `
 ### Building a result URL
 
 ```
-base = urlTemplate.replace("{page}", encodeURIComponent(doc.page))
+base = urlTemplate.replace("{page}", encodePerSegment(doc.page))
 hash = doc.anchor || ""                       (omit if empty)
 text = ":~:text=" + <matched phrase>          (only if site.fragments and a phrase)
 result = base + ("#" + hash + text)           (only if hash or text)
 ```
+
+`encodePerSegment` = `encodeURIComponent` on each `/`-separated segment, rejoined with `/` — identical to `encodeURIComponent` for an ordinary single-segment page, but for a relative `page` it preserves the `/` and `..` so a folded-in file (e.g. `../blob/main/README.md`) resolves to the rendered file on GitHub.
 
 ### Validation (verify-or-explain)
 

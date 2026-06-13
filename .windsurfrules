@@ -18,7 +18,7 @@ The wiki is a git submodule in `wiki/`. It's only needed for editing the docs �
 ## Commands
 
 - **Test:** `npm test` — the builder suite (`node builder/test/run.mjs`).
-- **Build an index (the CLI):** `npx wiki-search-index --wiki ./wiki` → `<wiki>/search-index.json`.
+- **Build an index (the CLI):** `npx wiki-search-index --wiki ./wiki` → `<wiki>/search-index.json`. Add `--file README.md` (repeatable; run from the repo root) to fold repo files in alongside the wiki pages.
 - **Run the app locally:** `python3 -m http.server` from the repo root, then open `http://localhost:8000/app/?wiki=uhop/wiki-search`.
 
 There is no build step and no transpilation — `.mjs` / `.js` run as-is in Node and the browser.
@@ -68,6 +68,8 @@ npx wiki-search-index --wiki ./wiki
 npx wiki-search-index --wiki ./wiki --repo uhop/wiki-search
 # Any non-GitHub site — supply a URL template containing {page}
 npx wiki-search-index --wiki ./docs --url-template 'https://example.com/docs/{page}' --name 'Example docs'
+# Fold a repo file (e.g. README API docs) in alongside the wiki — run from the repo root
+npx wiki-search-index --wiki ./wiki --file README.md
 ```
 
 Search (the hosted app):

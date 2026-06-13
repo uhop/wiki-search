@@ -12,7 +12,7 @@ wiki-search/
 ├── builder/              # The published package: Markdown → JSON index
 │   ├── wiki-index.mjs    # CLI entry: arg parsing, owner/repo inference, write/stdout
 │   ├── lib/
-│   │   ├── build-index.mjs  # Walk the wiki, section the Markdown, assemble the index
+│   │   ├── build-index.mjs  # Walk the wiki, section the Markdown, fold in --file repo files, assemble the index
 │   │   ├── markdown.mjs     # Markdown → sections (heading + plain-text body)
 │   │   └── slug.mjs         # GitHub-style heading slugs (github-slugger approximation)
 │   ├── test/             # Builder tests (node builder/test/run.mjs) + Markdown fixtures
@@ -45,6 +45,10 @@ wiki-search/
 ### The self-describing index (the contract between the two halves)
 
 The builder and the app are decoupled by a single JSON document, specified in [`INDEX-FORMAT.md`](./INDEX-FORMAT.md). It carries its own `site.urlTemplate` (must contain `{page}`), a `site.fragments` flag, and a `docs[]` array (one entry per section: `page`, `title`, `heading`, `anchor`, `text`). The app **assumes nothing beyond this contract** — it builds result links purely from the index's own metadata, so there is no hardcoded `github.com` and any site emitting this shape is searchable. `v` bumps only on a breaking change; clients reject a `v` they don't understand.
+
+### Folding non-wiki files into the index (a README as API docs)
+
+`--file <path>` (repeatable) indexes a repo file — most often a `README.md` that doubles as API docs — alongside the wiki pages. The folded doc carries a **relative** `page`, `../blob/<branch>/<path>`, which the wiki `urlTemplate` (`…/wiki/{page}`) expands to `…/wiki/../blob/<branch>/<path>`; the browser normalizes the `..` away on navigation, landing on the rendered file on GitHub. This stays additive — the index is still `v: 1` with no new fields — because the app encodes `page` **per path-segment** (so the `/` and `..` survive substitution) rather than whole-string. Run the builder from the repo root (so `--file` paths and the inferred default branch are correct); relative/same-host targets only.
 
 ### Path P — the bookmarklet opens the app on its own origin
 
