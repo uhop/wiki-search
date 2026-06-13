@@ -56,6 +56,7 @@ Run locally: `python3 -m http.server` from the repo root, then open
 
 ## Release notes
 
+- 0.2.0 _New: fold a repo file (e.g. a README that doubles as API docs) into the index with `--file`; fix: headings with links or image badges now slug like GitHub._
 - 0.1.3 _Fix: HTML entities in headings now decode too, so anchors and section titles match GitHub (0.1.1 only handled body text)._
 - 0.1.2 _Set the published CLI's execute bit (tidy hygiene; npm already chmods bins on install)._
 - 0.1.1 _HTML entities (`&mdash;`, `&#1234;`, …) are decoded so they no longer pollute the index._
