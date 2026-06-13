@@ -171,10 +171,18 @@ const loadIndex = async url => {
 // defensively so it is never mistaken for a prefix/suffix separator.
 const encodeTextDirective = s => encodeURIComponent(s).replace(/-/g, '%2D');
 
+// Encode each path SEGMENT but keep '/' and '..' literal. A page is normally a
+// single wiki URL segment (encoded exactly as encodeURIComponent would), but a
+// folded-in repo file uses a relative path like ../blob/main/README.md;
+// per-segment encoding lets the slashes and dot-segment survive substitution so
+// the browser normalizes them on navigation (…/wiki/../blob/main/README.md →
+// …/blob/main/README.md). See INDEX-FORMAT.md (doc.page).
+const encodePagePath = p => String(p).split('/').map(encodeURIComponent).join('/');
+
 // Build the result URL purely from the index's own metadata + the active levers.
 // No hardcoded github.com — a non-GitHub site just ships a different urlTemplate.
 const resultUrl = (doc, phrase) => {
-  const base = SITE.urlTemplate.replace('{page}', encodeURIComponent(doc.page));
+  const base = SITE.urlTemplate.replace('{page}', encodePagePath(doc.page));
   // Drop the text directive when unsupported/disabled: in a non-consuming browser
   // a trailing :~:text= would corrupt the #anchor and break the scroll fallback too.
   const useText = MODES.text && FRAGMENTS_SUPPORTED && SITE.fragments !== false && phrase;

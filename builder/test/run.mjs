@@ -5,8 +5,8 @@
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {dirname, join} from 'node:path';
-import {buildIndex} from '../lib/build-index.mjs';
-import {toPlainText} from '../lib/markdown.mjs';
+import {buildIndex, relativeFilePage} from '../lib/build-index.mjs';
+import {toPlainText, headingToText} from '../lib/markdown.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const opts = {
@@ -68,6 +68,46 @@ assert.ok(
 assert.equal(entityHeading.heading, '4.2.2 — 2026-05-29', 'heading display text is decoded');
 assert.ok(!/&mdash;/.test(entityHeading.heading), 'no literal entity in heading text');
 
+// Heading-level Markdown is reduced to the text GitHub slugs against. A LINK
+// contributes only its text (the URL must not leak into the slug).
+assert.equal(headingToText('See the [docs](https://x/y) page'), 'See the docs page');
+assert.equal(headingToText('A [ref link][r] here'), 'A ref link here');
+const docsLink = byPage.Filters.find(d => d.anchor === 'see-the-docs-page');
+assert.ok(docsLink, 'link heading slugs from link text (see-the-docs-page)');
+assert.equal(docsLink.heading, 'See the docs page', 'link heading display drops the URL');
+assert.ok(
+  !byPage.Filters.some(d => /shields|example\.test|https?/.test(d.anchor)),
+  'no URL/href leaks into any Filters anchor'
+);
+
+// An IMAGE contributes no text (GitHub excludes it from the anchor); a badge —
+// image-in-link — at the end of a heading leaves a trailing space that becomes an
+// edge hyphen, matching GitHub (e.g. "node-re2 [![…]…]" → node-re2-). Verified
+// live against uhop/node-re2's rendered README.
+assert.equal(
+  headingToText('Tool [![NPM version][i]][u]'),
+  'Tool ',
+  'badge dropped, trailing space kept'
+);
+assert.equal(
+  headingToText('![logo](x) Title'),
+  ' Title',
+  'leading image dropped, leading space kept'
+);
+const badge = byPage.Filters.find(d => d.anchor === 'build-');
+assert.ok(badge, 'badge-ending heading keeps the edge hyphen in the slug (build-)');
+assert.equal(badge.heading, 'Build', 'badge heading display is trimmed (no trailing space)');
+
+// Inline code, * / ~ emphasis, and bare [brackets] already slug correctly via
+// slug.mjs, so the reducer leaves them (only unwraps inline code for a clean
+// display); underscores must survive (snake_case is not emphasis).
+assert.equal(headingToText('The `exec` method'), 'The exec method', 'inline code unwrapped');
+assert.equal(
+  headingToText('keep snake_case_name'),
+  'keep snake_case_name',
+  'underscores untouched'
+);
+
 // Plain text is stripped of markdown + wiki link syntax.
 const pick = byPage.Filters.find(d => d.anchor === 'pick-by-path');
 assert.ok(
@@ -101,6 +141,58 @@ assert.deepEqual(
 );
 const again = await buildIndex(opts);
 assert.equal(JSON.stringify(index), JSON.stringify(again), 'deterministic output');
+
+// --- Folding in non-wiki files (variant D): a relative {page} pointing out of
+// the wiki, so a repo file like README.md can be indexed alongside the wiki.
+assert.equal(
+  relativeFilePage('README.md', 'main'),
+  '../blob/main/README.md',
+  'file → relative page'
+);
+assert.equal(
+  relativeFilePage('./docs/Guide.md', 'dev'),
+  '../blob/dev/docs/Guide.md',
+  'subdir path, leading ./ stripped'
+);
+
+// Fold a fixture in as if it were the repo README (reuse Parser.md as the source).
+const mixed = await buildIndex({
+  ...opts,
+  files: [
+    {
+      absPath: join(here, 'fixtures', 'Parser.md'),
+      page: relativeFilePage('README.md', 'main'),
+      titleFallback: 'README'
+    }
+  ]
+});
+const fileDocs = mixed.docs.filter(d => d.page === '../blob/main/README.md');
+assert.ok(fileDocs.length > 0, 'folded file produces docs');
+assert.equal(fileDocs[0].title, 'Parser', 'folded file title comes from its own H1');
+assert.ok(
+  fileDocs.some(d => d.anchor === 'parser'),
+  'folded file anchors are computed'
+);
+
+// Folded docs come AFTER the wiki pages, and ids stay sequential across both.
+assert.ok(
+  mixed.docs.findIndex(d => d.page === '../blob/main/README.md') >
+    mixed.docs.findIndex(d => d.page === 'Parser'),
+  'folded files appended after wiki pages'
+);
+assert.deepEqual(
+  mixed.docs.map(d => d.id),
+  mixed.docs.map((_, i) => i),
+  'sequential ids across wiki + files'
+);
+
+// Adding files must not perturb the wiki docs — the prefix is byte-identical, so
+// the committed-index diff-gate on a wiki-only build still holds.
+assert.equal(
+  JSON.stringify(mixed.docs.slice(0, index.docs.length)),
+  JSON.stringify(index.docs),
+  'wiki docs unchanged when files are folded in'
+);
 
 console.log(
   `ok — ${index.docs.length} sections, anchors: ${anchors.filter(Boolean).join(', ')} | ${byPage.Filters.map(

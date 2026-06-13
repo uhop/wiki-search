@@ -16,7 +16,11 @@ export const splitSections = md => {
   for (const line of md.split(/\r?\n/)) {
     if (FENCE.test(line)) inFence = !inFence;
     const m = inFence ? null : ATX.exec(line);
-    if (m) sections.push({level: m[1].length, heading: decodeEntities(m[2]).trim(), lines: []});
+    // Reduced but NOT trimmed: edge whitespace left by markdown removal must
+    // reach the slugger (→ edge hyphen, as GitHub does). build-index trims the
+    // display copy.
+    if (m)
+      sections.push({level: m[1].length, heading: headingToText(decodeEntities(m[2])), lines: []});
     else sections.at(-1).lines.push(line);
   }
   return sections
@@ -90,6 +94,24 @@ const decodeEntity = (_m, body) => {
 // and the two flanking spaces collapse to "--" (#422--2026-05-29), exactly as
 // GitHub does. Slugging the raw "&mdash;" instead leaks the junk token "mdash".
 export const decodeEntities = s => s.replace(ENTITY_RE, decodeEntity);
+
+// Reduce a heading's inline Markdown to the text GitHub slugs against — needed
+// because READMEs put badges / links in headings (wiki headings rarely do). The
+// only constructs that actually leak into a slug are LINKS and IMAGES (their
+// URL/ref bleeds in); inline code, * / ~ emphasis, and bare [brackets] already
+// slug correctly via slug.mjs, so they're left alone. Images are dropped (GitHub
+// excludes image text from a heading anchor — e.g. `# Foo [![badge][i]][u]`
+// anchors as `foo-`, not `foo-badge-i-u`); links reduce to their text; inline
+// code is unwrapped so the stored display text and the slug derive from one
+// string. Entities are already decoded by the caller. Order matters: images
+// before links, so a badge `[![alt][ref]][url]` collapses image→"" then link→"".
+export const headingToText = s =>
+  s
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // inline image ![alt](url) → dropped
+    .replace(/!\[[^\]]*\]\[[^\]]*\]/g, '') // reference image ![alt][ref] → dropped
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // inline link [text](url) → text
+    .replace(/\[([^\]]*)\]\[[^\]]*\]/g, '$1') // reference link [text][ref] → text
+    .replace(/`+([^`]+)`+/g, '$1'); // inline code `code` → code
 
 // Reduce Markdown to plain, collapsed text. Code *text* is kept (API names are
 // worth searching) — only the fence delimiters are removed.
