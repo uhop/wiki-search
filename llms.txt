@@ -32,8 +32,9 @@ Commit `search-index.json` into the wiki (it's served from `raw.githubuserconten
 - `--file <path>` — also index a repo file (e.g. `README.md`, often the real API doc) alongside the wiki pages; repeatable. Results deep-link to the rendered file on GitHub. Run from the repo root; relative/same-host only.
 - `--branch <name>` — blob branch for `--file` links (default: the repo's inferred default branch).
 - `--stdout` — write the index to stdout instead of a file.
+- `--help` / `--version` — print usage / the version and exit `0`; nothing is built.
 
-With neither `--url-template` nor `--repo`, owner/repo is inferred from the wiki dir's git origin (`…/<owner>/<repo>.wiki.git`). Exit code `2` if neither is given and inference fails. A `--file` document carries a relative `page` (`../blob/<branch>/<path>`) that the browser resolves against the wiki URL — additive, so the index stays `v: 1`.
+With neither `--url-template` nor `--repo`, owner/repo is inferred from the wiki dir's git origin (`…/<owner>/<repo>.wiki.git`). Exit code `2` if neither is given and inference fails, and for any unknown flag or stray argument (usage on stderr, nothing written). A `--file` document carries a relative `page` (`../blob/<branch>/<path>`) that the browser resolves against the wiki URL — additive, so the index stays `v: 1`.
 
 ## Output — index format v1
 

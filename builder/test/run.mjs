@@ -5,6 +5,11 @@
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {dirname, join} from 'node:path';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {cp, mkdtemp, readFile, rm} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
+import {tmpdir} from 'node:os';
 import {buildIndex, relativeFilePage} from '../lib/build-index.mjs';
 import {toPlainText, headingToText} from '../lib/markdown.mjs';
 
@@ -193,6 +198,57 @@ assert.equal(
   JSON.stringify(index.docs),
   'wiki docs unchanged when files are folded in'
 );
+
+// CLI surface: --help / --version / bad arguments must exit before the default
+// action, which writes <cwd>/wiki/search-index.json. Run from a scratch cwd that
+// HAS a wiki/ dir, so any fall-through would leave a file behind.
+{
+  const cli = join(here, '..', 'wiki-index.mjs');
+  const cwd = await mkdtemp(join(tmpdir(), 'wiki-index-cli-'));
+  await cp(join(here, 'fixtures'), join(cwd, 'wiki'), {recursive: true});
+  const out = join(cwd, 'wiki', 'search-index.json');
+  const invoke = argv =>
+    promisify(execFile)(process.execPath, [cli, ...argv], {cwd}).then(
+      r => ({code: 0, ...r}),
+      e => ({code: e.code, stdout: e.stdout, stderr: e.stderr})
+    );
+  try {
+    const pkgVersion = JSON.parse(
+      await readFile(join(here, '..', '..', 'package.json'), 'utf8')
+    ).version;
+
+    let r = await invoke(['--version']);
+    assert.equal(r.code, 0, '--version exits 0');
+    assert.equal(r.stdout.trim(), pkgVersion, '--version prints package.json version');
+    assert.ok(!existsSync(out), '--version writes nothing');
+
+    r = await invoke(['--help']);
+    assert.equal(r.code, 0, '--help exits 0');
+    assert.match(r.stdout, /^Usage: wiki-search-index/, '--help prints usage');
+    assert.ok(!existsSync(out), '--help writes nothing');
+
+    r = await invoke(['--bogus']);
+    assert.equal(r.code, 2, 'unknown flag exits 2');
+    assert.match(r.stderr, /unrecognized argument: --bogus/, 'unknown flag is named');
+    assert.match(r.stderr, /Usage: wiki-search-index/, 'unknown flag prints usage');
+    assert.ok(!existsSync(out), 'unknown flag writes nothing');
+
+    r = await invoke(['--wiki', 'wiki', 'stray']);
+    assert.equal(r.code, 2, 'stray positional exits 2');
+    assert.match(r.stderr, /unrecognized argument: stray/, 'stray positional is named');
+    assert.ok(!existsSync(out), 'stray positional writes nothing');
+
+    r = await invoke(['--version', 'x', '--wiki=nope']);
+    assert.equal(r.code, 0, '--version/--help win over stray or bad arguments');
+    assert.equal(r.stdout.trim(), pkgVersion, '--version does not consume a following token');
+
+    r = await invoke(['--wiki', 'wiki', '--repo', 'o/r']);
+    assert.equal(r.code, 0, 'a valid invocation still builds');
+    assert.ok(existsSync(out), 'a valid invocation writes the index');
+  } finally {
+    await rm(cwd, {recursive: true, force: true});
+  }
+}
 
 console.log(
   `ok — ${index.docs.length} sections, anchors: ${anchors.filter(Boolean).join(', ')} | ${byPage.Filters.map(

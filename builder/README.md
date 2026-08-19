@@ -27,6 +27,12 @@ node builder/wiki-index.mjs --wiki ./wiki --file README.md --file CONTRIBUTING.m
 | `--name <str>`         | `<repo> wiki`              | `site.name`.                                            |
 | `--file <path>`        | —                          | Fold a repo file (e.g. `README.md`) in. Repeatable.     |
 | `--branch <name>`      | inferred                   | Blob branch for `--file` links (repo's default branch). |
+| `--help`               | —                          | Print usage and exit.                                   |
+| `--version`            | —                          | Print the version and exit.                             |
+
+Unknown flags and stray arguments are rejected with usage on stderr and exit code
+`2` — nothing is written. (The default action writes `./wiki/search-index.json`,
+so a typo must not fall through to it.)
 
 What it does: one section per ATX heading (plus a page-top preamble section),
 GitHub-style heading anchors with `-1`/`-2` disambiguation, `#`-in-code-fence

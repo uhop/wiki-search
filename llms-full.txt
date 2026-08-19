@@ -29,8 +29,10 @@ wiki-search-index [options]
 | `--file <path>` | — | Also index a repo file (e.g. `README.md`) alongside the wiki pages. **Repeatable.** Run from the repo root; relative/same-host only. |
 | `--branch <name>` | inferred | Blob branch for `--file` links (the repo's default branch, inferred from git). |
 | `--stdout` | off | Write the index to stdout instead of a file. |
+| `--help` | — | Print usage and exit `0`. |
+| `--version` | — | Print the package version and exit `0`. |
 
-Flags accept both `--key value` and `--key=value`. `--stdout` is a valueless boolean; `--file` may be repeated to fold in several files. A `--file` document links **out** of the wiki via a relative `page` (`../blob/<branch>/<path>`) the browser resolves against the wiki URL — additive, so the index stays `v: 1`. Without a wiki, `--file` alone still works against a `--repo`/`--url-template` wiki layout (the README-only case).
+Flags accept both `--key value` and `--key=value`. `--stdout`, `--help`, and `--version` are valueless booleans; `--file` may be repeated to fold in several files. **Unknown flags and stray positional arguments are rejected**: usage on stderr, exit `2`, nothing written — the default action writes `./wiki/search-index.json`, so a typo must not fall through to it. `--help` / `--version` take precedence over any other argument. A `--file` document links **out** of the wiki via a relative `page` (`../blob/<branch>/<path>`) the browser resolves against the wiki URL — additive, so the index stays `v: 1`. Without a wiki, `--file` alone still works against a `--repo`/`--url-template` wiki layout (the README-only case).
 
 ### Repo inference
 
